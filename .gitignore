@@ -1,6 +1,6 @@
 /.vs
 /DbTest
-/log
+*/log
 */bin
 */obj
 */Properties

@@ -19,7 +19,7 @@ namespace Kakegurui.Log
             _config = new ConfigurationBuilder()
                 .AddJsonFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json"))
                 .Build();
-            Directory = _config.GetValue("Logging:Directory", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../log/"));
+            Directory = _config.GetValue("Logging:Directory", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Log"));
             HoldDays = _config.GetValue("Logging:HoldDays", 0);
             SetLoggerProviders(GetLoggerProviders(Directory, HoldDays));
         }

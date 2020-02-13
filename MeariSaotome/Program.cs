@@ -28,6 +28,7 @@ namespace MeariSaotome
         /// <param name="args">配置参数</param>
         public static void Main(string[] args)
         {
+
             //未捕获异常处理
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionEventHandler;
             
@@ -71,7 +72,7 @@ namespace MeariSaotome
                 new FileLogger(LogLevel.Debug,LogLevel.Error,logName, LogPool.Directory, LogPool.HoldDays)
             };
             LogPool.SetLoggerProviders(loggerProviders);
-
+            LogPool.Logger.LogInformation("123");
             //添加日志和监听端口
             IWebHostBuilder builder = WebHost.CreateDefaultBuilder(args)
                 .ConfigureLogging((hostingContext, logging) =>
