@@ -1,0 +1,8 @@
+/.vs
+/DbTest
+/log
+*/bin
+*/obj
+*/Properties
+*/*.user
+*.user

@@ -1,0 +1,87 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Adapter\**" />
+    <Compile Remove="Cache\**" />
+    <Compile Remove="Codes\**" />
+    <Compile Remove="Config\**" />
+    <Compile Remove="Controllers\**" />
+    <Compile Remove="DataFlow\**" />
+    <Compile Remove="Data\**" />
+    <Compile Remove="Managers\**" />
+    <Compile Remove="Models\**" />
+    <Compile Remove="Monitor\**" />
+    <Compile Remove="Simulator\**" />
+    <Compile Remove="Utils\**" />
+    <Content Remove="Adapter\**" />
+    <Content Remove="Cache\**" />
+    <Content Remove="Codes\**" />
+    <Content Remove="Config\**" />
+    <Content Remove="Controllers\**" />
+    <Content Remove="DataFlow\**" />
+    <Content Remove="Data\**" />
+    <Content Remove="Managers\**" />
+    <Content Remove="Models\**" />
+    <Content Remove="Monitor\**" />
+    <Content Remove="Simulator\**" />
+    <Content Remove="Utils\**" />
+    <EmbeddedResource Remove="Adapter\**" />
+    <EmbeddedResource Remove="Cache\**" />
+    <EmbeddedResource Remove="Codes\**" />
+    <EmbeddedResource Remove="Config\**" />
+    <EmbeddedResource Remove="Controllers\**" />
+    <EmbeddedResource Remove="DataFlow\**" />
+    <EmbeddedResource Remove="Data\**" />
+    <EmbeddedResource Remove="Managers\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <EmbeddedResource Remove="Monitor\**" />
+    <EmbeddedResource Remove="Simulator\**" />
+    <EmbeddedResource Remove="Utils\**" />
+    <None Remove="Adapter\**" />
+    <None Remove="Cache\**" />
+    <None Remove="Codes\**" />
+    <None Remove="Config\**" />
+    <None Remove="Controllers\**" />
+    <None Remove="DataFlow\**" />
+    <None Remove="Data\**" />
+    <None Remove="Managers\**" />
+    <None Remove="Models\**" />
+    <None Remove="Monitor\**" />
+    <None Remove="Simulator\**" />
+    <None Remove="Utils\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove=".gitignore" />
+    <None Remove="README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BLT.EntityFramework.Extensions.EFCore" Version="1.3.4" />
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="MySql.Data.EntityFrameworkCore" Version="8.0.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kakegurui\Kakegurui.csproj" />
+    <ProjectReference Include="..\MomobamiKirari\MomobamiKirari.csproj" />
+    <ProjectReference Include="..\MomobamiRirika\MomobamiRirika.csproj" />
+    <ProjectReference Include="..\NishinotouinYuriko\NishinotouinYuriko.csproj" />
+    <ProjectReference Include="..\SayakaIgarashi\SayakaIgarashi.csproj" />
+    <ProjectReference Include="..\YumekoJabami\YumekoJabami.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
+
+</Project>
