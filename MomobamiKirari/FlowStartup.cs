@@ -29,6 +29,7 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Serialization;
 using YumekoJabami.Cache;
 using YumekoJabami.Codes;
+using YumekoJabami.Controllers;
 using YumekoJabami.Models;
 using YumekoJabami.Monitor;
 

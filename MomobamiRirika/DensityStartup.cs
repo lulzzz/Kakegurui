@@ -28,6 +28,7 @@ using MomobamiRirika.Models;
 using MomobamiRirika.Monitor;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Serialization;
+using YumekoJabami.Controllers;
 using YumekoJabami.Models;
 using YumekoJabami.Monitor;
 

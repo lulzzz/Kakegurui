@@ -27,6 +27,7 @@ using NishinotouinYuriko.DataFlow;
 using NishinotouinYuriko.Models;
 using NishinotouinYuriko.Monitor;
 using YumekoJabami.Cache;
+using YumekoJabami.Controllers;
 using YumekoJabami.Models;
 using YumekoJabami.Monitor;
 

@@ -13,6 +13,7 @@
     <Compile Remove="Controllers\**" />
     <Compile Remove="DataFlow\**" />
     <Compile Remove="Data\**" />
+    <Compile Remove="Log\**" />
     <Compile Remove="Managers\**" />
     <Compile Remove="Models\**" />
     <Compile Remove="Monitor\**" />
@@ -25,6 +26,7 @@
     <Content Remove="Controllers\**" />
     <Content Remove="DataFlow\**" />
     <Content Remove="Data\**" />
+    <Content Remove="Log\**" />
     <Content Remove="Managers\**" />
     <Content Remove="Models\**" />
     <Content Remove="Monitor\**" />
@@ -37,6 +39,7 @@
     <EmbeddedResource Remove="Controllers\**" />
     <EmbeddedResource Remove="DataFlow\**" />
     <EmbeddedResource Remove="Data\**" />
+    <EmbeddedResource Remove="Log\**" />
     <EmbeddedResource Remove="Managers\**" />
     <EmbeddedResource Remove="Models\**" />
     <EmbeddedResource Remove="Monitor\**" />
@@ -49,6 +52,7 @@
     <None Remove="Controllers\**" />
     <None Remove="DataFlow\**" />
     <None Remove="Data\**" />
+    <None Remove="Log\**" />
     <None Remove="Managers\**" />
     <None Remove="Models\**" />
     <None Remove="Monitor\**" />
