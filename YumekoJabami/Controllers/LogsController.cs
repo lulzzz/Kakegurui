@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Linq;
 using Kakegurui.Log;
 using Kakegurui.WebExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace YumekoJabami.Controllers
 {
@@ -42,30 +40,12 @@ namespace YumekoJabami.Controllers
         [HttpGet]
         public IActionResult GetLogs([FromQuery]DateTime logDate, [FromQuery]int logLevel, [FromQuery]int logEvent, [FromQuery]int pageNum, [FromQuery]int pageSize, [FromQuery]bool hasTotal)
         {
-            var (item1, item2) = LogReader.ReadLogs(_logName, logDate, logLevel, logEvent, pageNum, pageSize, hasTotal);
-
-            PageModel<object> model = new PageModel<object>
+            var (item1, item2) = LogReader.ReadLogs(LogPool.Directory,_logName, logDate, logLevel, logEvent, pageNum, pageSize, hasTotal);
+            return Ok(new PageModel<LogItem>
             {
-                Datas = item1
-                    .Select(l =>
-                    {
-                        string[] datas = l.Split(']', StringSplitOptions.RemoveEmptyEntries);
-                        //4个]1个空格
-                        int headLength = datas[0].Length + datas[1].Length + datas[2].Length + datas[3].Length + 5;
-                        return new
-                        {
-                            Time = datas[0].Substring(1, datas[0].Length - 1),
-                            Level = ((LogLevel)Convert.ToInt32(datas[1].Substring(1, datas[1].Length - 1))).ToString(),
-                            Event = ((LogEvent)Convert.ToInt32(datas[2].Substring(1, datas[2].Length - 1))).ToString(),
-                            User = datas[3].Substring(1, datas[3].Length - 1),
-                            Content = l.Substring(headLength, l.Length - headLength)
-                        };
-                    })
-                    .Cast<object>()
-                    .ToList(),
-                Total = hasTotal ? item2 : 0
-            };
-            return Ok(model);
+                Datas = item1,
+                Total = item2
+            });
         }
     }
 }
