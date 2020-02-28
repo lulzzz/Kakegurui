@@ -122,10 +122,6 @@ namespace MomobamiKirari.DataFlow
             {
                 foreach (var relation in device.Device_Channels)
                 {
-                    if (relation.Channel.SectionId.HasValue)
-                    {
-
-                    }
                     foreach (TrafficLane lane in relation.Channel.Lanes)
                     {
                         LaneFlowStatisticsBlock laneBlock = new LaneFlowStatisticsBlock(_serviceProvider);
