@@ -14,7 +14,10 @@ namespace ItsukiSumeragi.DataFlow
     /// <summary>
     /// 交通数据源数据块
     /// </summary>
-    public abstract class TrafficBranchBlock<T> : IHealthCheck where T : TrafficData
+    public abstract class TrafficBranchBlock<T,U> 
+        : IHealthCheck 
+        where T : TrafficData
+        where U : TrafficDevice
     {
         /// <summary>
         /// 最大批处理数量
@@ -74,7 +77,7 @@ namespace ItsukiSumeragi.DataFlow
         /// <summary>
         /// 设备列表
         /// </summary>
-        protected readonly List<TrafficDevice> _devices = new List<TrafficDevice>();
+        protected readonly List<U> _devices = new List<U>();
 
         /// <summary>
         /// 下个时间段总数
@@ -94,7 +97,7 @@ namespace ItsukiSumeragi.DataFlow
         protected TrafficBranchBlock(IServiceProvider serviceProvider,LogEvent logEvent)
         {
             _serviceProvider = serviceProvider;
-            _logger = serviceProvider.GetRequiredService<ILogger<TrafficBranchBlock<T>>>();
+            _logger = serviceProvider.GetRequiredService<ILogger<TrafficBranchBlock<T,U>>>();
             _logEvent = logEvent;
         }
 
@@ -108,7 +111,7 @@ namespace ItsukiSumeragi.DataFlow
         /// 供子类实现的重置数据块
         /// </summary>
         /// <param name="devices">设备集合</param>
-        protected virtual void ResetCore(List<TrafficDevice> devices)
+        protected virtual void ResetCore(List<U> devices)
         {
 
         }
@@ -129,14 +132,14 @@ namespace ItsukiSumeragi.DataFlow
         /// </summary>
         public void Open()
         {
-            Open(new List<TrafficDevice>(), DateTime.MinValue, DateTime.MaxValue);
+            Open(new List<U>(), DateTime.MinValue, DateTime.MaxValue);
         }
 
         /// <summary>
         /// 打开数据块，将接收任何时间范围内的数据，此时切换分支无效
         /// </summary>
         /// <param name="devices">设备列表</param>
-        public void Open(List<TrafficDevice> devices)
+        public void Open(List<U> devices)
         {
             Open(devices,DateTime.MinValue, DateTime.MaxValue);
         }
@@ -148,7 +151,7 @@ namespace ItsukiSumeragi.DataFlow
         /// <param name="maxTime">接收数据的最大时间</param>
         public void Open(DateTime minTime, DateTime maxTime)
         {
-            Open(new List<TrafficDevice>(),minTime,maxTime);
+            Open(new List<U>(),minTime,maxTime);
         }
 
         /// <summary>
@@ -157,7 +160,7 @@ namespace ItsukiSumeragi.DataFlow
         /// <param name="devices">设备列表</param>
         /// <param name="minTime">接收数据的最小时间</param>
         /// <param name="maxTime">接收数据的最大时间</param>
-        public void Open(List<TrafficDevice> devices, DateTime minTime, DateTime maxTime)
+        public void Open(List<U> devices, DateTime minTime, DateTime maxTime)
         {
             _devices.Clear();
             _devices.AddRange(devices);
@@ -176,7 +179,7 @@ namespace ItsukiSumeragi.DataFlow
         /// 重置数据块
         /// </summary>
         /// <param name="devices">设备集合</param>
-        public void Reset(List<TrafficDevice> devices)
+        public void Reset(List<U> devices)
         {
             ResetCore(devices);
             _devices.Clear();

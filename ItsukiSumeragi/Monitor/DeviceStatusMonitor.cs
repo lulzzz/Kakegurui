@@ -4,12 +4,11 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using ItsukiSumeragi.Codes;
 using Kakegurui.Monitor;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using ItsukiSumeragi.Codes.Device;
 
 namespace ItsukiSumeragi.Monitor
 {
@@ -39,21 +38,14 @@ namespace ItsukiSumeragi.Monitor
         protected readonly ConcurrentDictionary<string, object> _result = new ConcurrentDictionary<string, object>();
 
         /// <summary>
-        /// 系统管理中心地址
-        /// </summary>
-        protected readonly string _systemUrl;
-
-        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="logger">日志</param>
-        /// <param name="configuration">配置项</param>
         /// <param name="httpClientFactory">http客户端工厂</param>
         /// <param name="memoryCache">缓存</param>
-        protected DeviceStatusMonitor(ILogger logger,IConfiguration configuration,IHttpClientFactory httpClientFactory, IMemoryCache memoryCache)
+        protected DeviceStatusMonitor(ILogger logger,IHttpClientFactory httpClientFactory, IMemoryCache memoryCache)
         {
             _logger = logger;
-            _systemUrl = configuration.GetValue<string>("SystemUrl");
             _httpClientFactory = httpClientFactory;
             _memoryCache = memoryCache;
         }

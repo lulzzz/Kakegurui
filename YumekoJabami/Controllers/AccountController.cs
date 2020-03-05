@@ -7,6 +7,7 @@ using YumekoJabami.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Internal;
+using Claim = System.Security.Claims.Claim;
 
 namespace YumekoJabami.Controllers
 {
@@ -58,35 +59,35 @@ namespace YumekoJabami.Controllers
         public async Task<IActionResult> Login(Login model)
         {
             IdentityUser identityUser = await _userManager.FindByNameAsync(model.UserName);
-            Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.CheckPasswordSignInAsync(identityUser, model.Password,false);
-            if (result.Succeeded)
+            if (identityUser != null)
             {
-                //基本信息
-                List<Claim> claims = new List<Claim>
+                Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.CheckPasswordSignInAsync(identityUser, model.Password, false);
+                if (result.Succeeded)
                 {
-                    new Claim(ClaimTypes.Name, identityUser.UserName),
-                    new Claim(ClaimTypes.Thumbprint, identityUser.SecurityStamp)
-                };
-                //用户权限
-                IList<Claim> userClaims = await _userManager.GetClaimsAsync(identityUser);
-                claims.AddRange(userClaims);
-                //角色权限
-                IList<string> roleNames = await _userManager.GetRolesAsync(identityUser);
-                foreach (string roleName in roleNames)
-                {
-                    IdentityRole identityRole = await _roleManager.FindByNameAsync(roleName);
-                    IList<Claim> roleClaims = await _roleManager.GetClaimsAsync(identityRole);
-                    claims.AddRange(roleClaims);
-                }
-                //去重
-                claims = claims.Distinct((c1, c2) => c1.Type == c2.Type && c1.Value == c2.Value).ToList();
+                    //基本信息
+                    List<Claim> claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, identityUser.UserName),
+                        new Claim(ClaimTypes.Thumbprint, identityUser.SecurityStamp)
+                    };
+                    //用户权限
+                    IList<Claim> userClaims = await _userManager.GetClaimsAsync(identityUser);
+                    claims.AddRange(userClaims);
+                    //角色权限
+                    IList<string> roleNames = await _userManager.GetRolesAsync(identityUser);
+                    foreach (string roleName in roleNames)
+                    {
+                        IdentityRole identityRole = await _roleManager.FindByNameAsync(roleName);
+                        IList<Claim> roleClaims = await _roleManager.GetClaimsAsync(identityRole);
+                        claims.AddRange(roleClaims);
+                    }
+                    //去重
+                    claims = claims.Distinct((c1, c2) => c1.Type == c2.Type && c1.Value == c2.Value).ToList();
 
-                return Ok(Token.WriteToken(claims));
+                    return Ok(Token.WriteToken(claims));
+                }
             }
-            else
-            {
-                return BadRequest();
-            }
+            return BadRequest();
         }
 
         /// <summary>

@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Linq;
+using ItsukiSumeragi.Models;
 using Kakegurui.Core;
 using Microsoft.EntityFrameworkCore;
 using MomobamiKirari.Models;
-using ItsukiSumeragi.Codes.Flow;
-using YumekoJabami.Models;
+using MomobamiKirari.Codes;
+using YumekoJabami.Data;
 
 namespace MomobamiKirari.Data
 {
     /// <summary>
     /// 交通流量数据库
     /// </summary>
-    public class FlowContext : DbContext
+    public class FlowContext : SystemContext
     {
         private const string FlowOneTable = "Flow_Lane_One";
         private const string FlowFiveTable = "Flow_Lane_Five";
@@ -21,6 +22,13 @@ namespace MomobamiKirari.Data
         private const string VehicleTable = "Flow_Vehicle";
         private const string BikeTable = "Flow_Bike";
         private const string PedestrainTable = "Flow_Pedestrain";
+
+        public DbSet<RoadCrossing> RoadCrossings { get; set; }
+        public DbSet<RoadSection> RoadSections { get; set; }
+        public DbSet<FlowDevice> Devices { get; set; }
+        public DbSet<FlowDevice_FlowChannel> Device_Channels { get; set; }
+        public DbSet<FlowChannel> Channels { get; set; }
+        public DbSet<Lane> Lanes { get; set; }
 
         public DbSet<LaneFlow_One> LaneFlows_One { get; set; }
         public DbSet<LaneFlow_Five> LaneFlows_Five { get; set; }
@@ -42,6 +50,53 @@ namespace MomobamiKirari.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<FlowDevice>()
+                .ToTable("Flow_Device")
+                .HasKey(d => d.DeviceId);
+            modelBuilder.Entity<FlowDevice>()
+                .HasIndex(d => d.Ip)
+                .IsUnique();
+            modelBuilder.Entity<FlowDevice>()
+                .HasMany(d => d.FlowDevice_FlowChannels)
+                .WithOne(r => r.Device);
+
+            modelBuilder.Entity<FlowDevice_FlowChannel>()
+                .ToTable("Flow_Device_Channel")
+                .HasKey(r => new { r.DeviceId, r.ChannelId })
+                .HasName("PK_Device_Channel");
+            modelBuilder.Entity<FlowDevice_FlowChannel>()
+                .HasOne(r => r.Channel)
+                .WithOne(c => c.FlowDevice_FlowChannel)
+                .HasConstraintName("FK_Device_Channel");
+
+            modelBuilder.Entity<FlowChannel>()
+                .ToTable("Flow_Channel")
+                .HasKey(c => c.ChannelId);
+
+            modelBuilder.Entity<FlowChannel>()
+                .HasMany(c => c.Lanes)
+                .WithOne(l => l.Channel);
+            modelBuilder.Entity<FlowChannel>()
+                .HasOne(c => c.RoadCrossing)
+                .WithMany(c => c.Channels);
+            modelBuilder.Entity<FlowChannel>()
+                .HasOne(c => c.RoadSection)
+                .WithMany(s => s.Channels);
+
+            modelBuilder.Entity<RoadCrossing>()
+                .ToTable("Flow_RoadCrossing")
+                .HasKey(r => r.CrossingId);
+
+            modelBuilder.Entity<RoadSection>()
+                .ToTable("Flow_RoadSection")
+                .HasKey(r => r.SectionId);
+
+            modelBuilder.Entity<Lane>()
+                .ToTable("Flow_Lane")
+                .HasKey(c => new { c.ChannelId, c.LaneId });
+
             modelBuilder.Entity<LaneFlow_One>()
                 .ToTable(FlowOneTable)
                 .HasKey(f => f.Id);

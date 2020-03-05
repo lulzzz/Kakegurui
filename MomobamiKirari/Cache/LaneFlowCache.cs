@@ -1,13 +1,10 @@
 ﻿using System;
 using ItsukiSumeragi.Cache;
-using ItsukiSumeragi.Models;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using MomobamiKirari.Codes;
 using MomobamiKirari.Models;
 using Newtonsoft.Json;
-using YumekoJabami.Cache;
-using YumekoJabami.Codes;
-using ItsukiSumeragi.Codes.Flow;
 
 namespace MomobamiKirari.Cache
 {
@@ -26,15 +23,15 @@ namespace MomobamiKirari.Cache
         {
             if (laneFlow != null)
             {
-                TrafficLane lane = memoryCache.GetLane(laneFlow.DataId);
+                Lane lane = memoryCache.GetLane(laneFlow.DataId);
                 if (lane != null)
                 {
                     laneFlow.LaneName = lane.LaneName;
                     laneFlow.CrossingName = lane.Channel.RoadCrossing?.CrossingName;
                     laneFlow.Direction = lane.Direction;
-                    laneFlow.Direction_Desc = memoryCache.GetCode(SystemType.系统管理中心, typeof(LaneDirection), laneFlow.Direction);
+                    laneFlow.Direction_Desc = memoryCache.GetCode(typeof(LaneDirection), laneFlow.Direction);
                     laneFlow.FlowDirection = lane.FlowDirection;
-                    laneFlow.Direction_Desc = memoryCache.GetCode(SystemType.系统管理中心, typeof(FlowDirection), laneFlow.FlowDirection);
+                    laneFlow.Direction_Desc = memoryCache.GetCode(typeof(FlowDirection), laneFlow.FlowDirection);
                 }
             }
             return laneFlow;

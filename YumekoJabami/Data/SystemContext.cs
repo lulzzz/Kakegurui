@@ -10,19 +10,17 @@ namespace YumekoJabami.Data
     /// </summary>
     public class SystemContext : IdentityDbContext<IdentityUser>
     {
-        public SystemContext(DbContextOptions<SystemContext> options)
+        public SystemContext(DbContextOptions options)
             : base(options)
         {
 
         }
 
-        public DbSet<TrafficClaim> TrafficClaims { get; set; }
+        public DbSet<Claim> TrafficClaims { get; set; }
 
-        public DbSet<TrafficCode> Codes { get; set; }
+        public DbSet<Code> Codes { get; set; }
 
-        public DbSet<TrafficParameter> Parameters { get; set; }
-
-        public DbSet<TrafficVersion> Version { get; set; }
+        public DbSet<Parameter> Parameters { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -148,21 +146,17 @@ namespace YumekoJabami.Data
                 .Property(c => c.Value)
                 .HasColumnType("VARCHAR(100)");
 
-            builder.Entity<TrafficClaim>()
+            builder.Entity<Claim>()
                 .ToTable("System_Claim")
                 .HasKey(c => new { c.Type, c.Value });
 
-            builder.Entity<TrafficCode>()
+            builder.Entity<Code>()
                 .ToTable("System_Code")
-                .HasKey(c => new { c.System, c.Key, c.Value });
+                .HasKey(c => new { c.Key, c.Value });
 
-            builder.Entity<TrafficParameter>()
+            builder.Entity<Parameter>()
                 .ToTable("System_Parameter")
-                .HasKey(p => new { p.Type, p.Key });
-
-            builder.Entity<TrafficVersion>()
-                .ToTable("System_Version")
-                .HasKey(p => p.Version);
+                .HasKey(p => p.Key );
         }
     }
 }

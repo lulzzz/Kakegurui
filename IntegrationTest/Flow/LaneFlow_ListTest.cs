@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi.Cache;
-using ItsukiSumeragi.Models;
 using Kakegurui.Core;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MomobamiKirari.Managers;
+using MomobamiKirari.Cache;
+using MomobamiKirari.Managers.Alone;
 using MomobamiKirari.Models;
 
 namespace IntegrationTest.Flow
@@ -15,7 +14,7 @@ namespace IntegrationTest.Flow
     [TestClass]
     public class LaneFlow_ListTest
     {
-        private static List<TrafficDevice> _devices;
+        private static List<FlowDevice> _devices;
         private static Dictionary<string, List<LaneFlow>> _datas;
         private static int _days;
         private static DateTime _startDate;
@@ -47,7 +46,7 @@ namespace IntegrationTest.Flow
                 _startMonths.Add(TimePointConvert.CurrentTimePoint(DateTimeLevel.Month, _startDate).AddMonths(m));
             }
 
-            _devices = DeviceDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
+            _devices = FlowDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
             TestInit.RefreshFlowCache(_devices);
 
             _datas = FlowDbSimulator.CreateData(TestInit.ServiceProvider, _devices, DataCreateMode.Fixed, dates, true);
@@ -58,11 +57,11 @@ namespace IntegrationTest.Flow
         {
             LaneFlowManager_Alone service = TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>();
 
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         var list1 = service.QueryList(lane.DataId, DateTimeLevel.Minute, _startDate, _startDate.AddDays(_days).AddMinutes(-1));
                         Assert.AreEqual(24 * 60 * _days, list1.Count);
@@ -241,9 +240,9 @@ namespace IntegrationTest.Flow
         {
             LaneFlowManager_Alone service = TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>();
             IMemoryCache memoryCache = TestInit.ServiceProvider.GetRequiredService<IMemoryCache>();
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     HashSet<string> laneIds = new HashSet<string>(
                         memoryCache.GetLanes()

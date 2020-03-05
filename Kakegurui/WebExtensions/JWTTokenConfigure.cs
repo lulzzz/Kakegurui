@@ -12,10 +12,6 @@ namespace Kakegurui.WebExtensions
     /// </summary>
     public static class JWTTokenConfigure
     {
-        /// <summary>
-        /// jwt验证
-        /// </summary>
-        /// <param name="services"></param>
         public static IServiceCollection ConfigureTrafficJWTToken(this IServiceCollection services)
         {
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -75,8 +75,6 @@
     <ProjectReference Include="..\Kakegurui\Kakegurui.csproj" />
     <ProjectReference Include="..\MomobamiKirari\MomobamiKirari.csproj" />
     <ProjectReference Include="..\MomobamiRirika\MomobamiRirika.csproj" />
-    <ProjectReference Include="..\NishinotouinYuriko\NishinotouinYuriko.csproj" />
-    <ProjectReference Include="..\SayakaIgarashi\SayakaIgarashi.csproj" />
     <ProjectReference Include="..\YumekoJabami\YumekoJabami.csproj" />
   </ItemGroup>
 

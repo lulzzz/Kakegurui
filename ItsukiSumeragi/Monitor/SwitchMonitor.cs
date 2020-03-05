@@ -12,7 +12,7 @@ namespace ItsukiSumeragi.Monitor
     /// <summary>
     /// 数据分支切换
     /// </summary>
-    public abstract class SwitchMonitor<T>:IFixedJob where T:TrafficData
+    public abstract class SwitchMonitor<T,U>:IFixedJob where T:TrafficData where U:TrafficDevice
     {
         /// <summary>
         /// 实例工厂
@@ -22,22 +22,22 @@ namespace ItsukiSumeragi.Monitor
         /// <summary>
         /// 日志
         /// </summary>
-        protected readonly ILogger<SwitchMonitor<T>> _logger;
+        protected readonly ILogger<SwitchMonitor<T,U>> _logger;
 
         /// <summary>
         /// 分支数据块
         /// </summary>
-        private readonly TrafficBranchBlock<T> _branchBlock;
+        private readonly TrafficBranchBlock<T, U> _branchBlock;
 
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="serviceProvider">实例工厂</param>
         /// <param name="branchBlock">数据块</param>
-        protected SwitchMonitor(IServiceProvider serviceProvider, TrafficBranchBlock<T> branchBlock)
+        protected SwitchMonitor(IServiceProvider serviceProvider, TrafficBranchBlock<T,U> branchBlock)
         {
             _serviceProvider = serviceProvider;
-            _logger = serviceProvider.GetRequiredService<ILogger<SwitchMonitor<T>>>();
+            _logger = serviceProvider.GetRequiredService<ILogger<SwitchMonitor<T, U>>>();
             _branchBlock = branchBlock;
         }
 

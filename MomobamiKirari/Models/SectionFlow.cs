@@ -1,6 +1,6 @@
 ﻿using System;
 using ItsukiSumeragi.Models;
-using ItsukiSumeragi.Codes.Flow;
+using MomobamiKirari.Codes;
 
 namespace MomobamiKirari.Models
 {

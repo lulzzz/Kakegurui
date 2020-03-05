@@ -3,20 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using ItsukiSumeragi.Models;
 using Kakegurui.Core;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MomobamiKirari.Codes;
 using MomobamiKirari.Controllers;
-using MomobamiKirari.Managers;
+using MomobamiKirari.Managers.Alone;
 using MomobamiKirari.Models;
-using ItsukiSumeragi.Codes.Flow;
 
 namespace IntegrationTest.Flow
 {
     [TestClass]
     public class LaneFlow_ChartTest
     {
-        private static List<TrafficDevice> _devices;
+        private static List<FlowDevice> _devices;
         private static int _days;
         private static DateTime _startDate;
         private static List<DateTime> _startMonths;
@@ -47,7 +46,7 @@ namespace IntegrationTest.Flow
                 _startMonths.Add(TimePointConvert.CurrentTimePoint(DateTimeLevel.Month, _startDate).AddMonths(m));
             }
 
-            _devices = DeviceDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
+            _devices = FlowDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
             TestInit.RefreshFlowCache(_devices);
 
             FlowDbSimulator.CreateData(TestInit.ServiceProvider, _devices, DataCreateMode.Fixed, dates, true);
@@ -60,11 +59,11 @@ namespace IntegrationTest.Flow
             LaneFlowsController flowsController = new LaneFlowsController(service);
 
             //按车道查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         List<List<TrafficChart<DateTime, int,LaneFlow>>> minuteCharts = service.QueryCharts(new HashSet<string>{ lane.DataId }, DateTimeLevel.Minute, _startDates.ToArray() , _startDates.Select(t=>t.AddDays(1).AddMinutes(-1)).ToArray());
                         //检查时间段数量
@@ -147,9 +146,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int laneCount = relation.Channel.Lanes.Count;
                     List<List<TrafficChart<DateTime, int,LaneFlow>>> minuteCharts = flowsController.QueryChartsByCrossing(relation.Channel.CrossingId.Value, DateTimeLevel.Minute, null, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
@@ -223,7 +222,7 @@ namespace IntegrationTest.Flow
                     {
                         Assert.AreEqual(1, monthCharts[i].Count);
                         int total = 0;
-                        foreach (TrafficLane lane in relation.Channel.Lanes)
+                        foreach (Lane lane in relation.Channel.Lanes)
                         {
                             total += service.QueryList(lane.DataId, DateTimeLevel.Month, _startMonths[i], _startMonths[i])
                                 .Sum(f => f.Total);
@@ -236,9 +235,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口方向查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int[] directions = relation.Channel.Lanes.Select(l => l.Direction).Distinct().ToArray();
                     foreach (int direction in directions)
@@ -315,7 +314,7 @@ namespace IntegrationTest.Flow
                         {
                             Assert.AreEqual(1, monthCharts[i].Count);
                             int total = 0;
-                            foreach (TrafficLane lane in relation.Channel.Lanes.Where(l => l.Direction == direction))
+                            foreach (Lane lane in relation.Channel.Lanes.Where(l => l.Direction == direction))
                             {
                                 total += service.QueryList(lane.DataId, DateTimeLevel.Month, _startMonths[i], _startMonths[i])
                                     .Sum(f => f.Total);
@@ -329,9 +328,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口流向查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int[] directions = relation.Channel.Lanes.Select(l => l.Direction).Distinct().ToArray();
                     foreach (int direction in directions)
@@ -411,7 +410,7 @@ namespace IntegrationTest.Flow
                         {
                             Assert.AreEqual(1, monthCharts[i].Count);
                             int total = 0;
-                            foreach (TrafficLane lane in relation.Channel.Lanes.Where(l => l.Direction == direction && flowDirections.Contains(l.FlowDirection)))
+                            foreach (Lane lane in relation.Channel.Lanes.Where(l => l.Direction == direction && flowDirections.Contains(l.FlowDirection)))
                             {
                                 total += service.QueryList(lane.DataId, DateTimeLevel.Month, _startMonths[i], _startMonths[i])
                                     .Sum(f => f.Total);
@@ -430,11 +429,11 @@ namespace IntegrationTest.Flow
         {
             LaneFlowsController controller = new LaneFlowsController(TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>());
             //按车道查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(1,new [] { lane.DataId }, DateTimeLevel.Minute, new[] { FlowType.平均速度 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                         //检查时间段数量
@@ -515,9 +514,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路段查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(relation.Channel.SectionId.Value, DateTimeLevel.Minute, new[] { FlowType.平均速度 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                     //检查时间段数量
@@ -597,9 +596,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口流向查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     foreach (int flowDirection in relation.Channel.Lanes.Select(l => l.FlowDirection).Distinct())
                     {
@@ -687,11 +686,11 @@ namespace IntegrationTest.Flow
         {
             LaneFlowsController controller = new LaneFlowsController(TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>());
             //按车道查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(1, new[] { lane.DataId }, DateTimeLevel.Minute, new[] { FlowType.车头时距 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                         //检查时间段数量
@@ -772,9 +771,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路段查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(relation.Channel.SectionId.Value, DateTimeLevel.Minute, new[] { FlowType.车头时距 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                     //检查时间段数量
@@ -854,9 +853,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口流向查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     foreach (int flowDirection in relation.Channel.Lanes.Select(l => l.FlowDirection).Distinct())
                     {
@@ -944,11 +943,11 @@ namespace IntegrationTest.Flow
         {
             LaneFlowsController controller = new LaneFlowsController(TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>());
             //按车道查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(1, new[] { lane.DataId }, DateTimeLevel.Minute, new[] { FlowType.空间占有率 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                         //检查时间段数量
@@ -1029,9 +1028,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路段查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(relation.Channel.SectionId.Value, DateTimeLevel.Minute, new[] { FlowType.空间占有率 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                     //检查时间段数量
@@ -1111,9 +1110,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口流向查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     foreach (int flowDirection in relation.Channel.Lanes.Select(l => l.FlowDirection).Distinct())
                     {
@@ -1201,11 +1200,11 @@ namespace IntegrationTest.Flow
         {
             LaneFlowsController controller = new LaneFlowsController(TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>());
             //按车道查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(1, new[] { lane.DataId }, DateTimeLevel.Minute, new[] { FlowType.时间占有率 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                         //检查时间段数量
@@ -1286,9 +1285,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路段查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(relation.Channel.SectionId.Value, DateTimeLevel.Minute, new[] { FlowType.时间占有率 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                     //检查时间段数量
@@ -1368,9 +1367,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口流向查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     foreach (int flowDirection in relation.Channel.Lanes.Select(l => l.FlowDirection).Distinct())
                     {
@@ -1458,11 +1457,11 @@ namespace IntegrationTest.Flow
         {
             LaneFlowsController controller = new LaneFlowsController(TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>());
             //按车道查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(1, new[] { lane.DataId }, DateTimeLevel.Minute, new[] { FlowType.车头间距 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                         //检查时间段数量
@@ -1543,9 +1542,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路段查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     List<List<TrafficChart<DateTime, int, LaneFlow>>> minuteCharts = controller.QueryChartsBySection(relation.Channel.SectionId.Value, DateTimeLevel.Minute, new[] { FlowType.车头间距 }, _startDates.ToArray(), _startDates.Select(t => t.AddDays(1).AddMinutes(-1)).ToArray());
                     //检查时间段数量
@@ -1625,9 +1624,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口流向查询图表
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     foreach (int flowDirection in relation.Channel.Lanes.Select(l => l.FlowDirection).Distinct())
                     {

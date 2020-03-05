@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using ItsukiSumeragi.Models;
 using Kakegurui.Core;
-using ItsukiSumeragi.Codes.Flow;
+using MomobamiKirari.Codes;
 
 namespace MomobamiKirari.Models
 {

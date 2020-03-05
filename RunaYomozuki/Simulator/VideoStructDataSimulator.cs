@@ -1,11 +1,28 @@
 ﻿using System;
 using Kakegurui.Core;
 using Kakegurui.WebExtensions;
-using MomobamiKirari.Adapter;
-using ItsukiSumeragi.Codes.Flow;
 
 namespace RunaYomozuki.Simulator
 {
+    /// <summary>
+    /// 视频结构化类型
+    /// </summary>
+    public enum VideoStructType
+    {
+        机动车 = 1,
+        非机动车 = 2,
+        行人 = 3
+    }
+
+    public enum TrafficStatus
+    {
+        通畅 = 1,
+        基本通畅 = 2,
+        轻度拥堵 = 3,
+        中度拥堵 = 4,
+        严重拥堵 = 5
+    }
+
     /// <summary>
     /// smo视频结构化模拟器
     /// </summary>
@@ -71,6 +88,28 @@ namespace RunaYomozuki.Simulator
 
                 channelId += 1;
             }
+        }
+
+        internal class VideoStructAdapterData
+        {
+            public int Id { get; set; }
+            public string ChannelId { get; set; }
+            public string LaneId { get; set; }
+            public long Timestamp { get; set; }
+            public DateTime DateTime => TimeStampConvert.ToLocalDateTime(Timestamp / 1000 * 1000);
+            public string Feature { get; set; }
+            public string Image { get; set; }
+            public int CountIndex { get; set; }
+            public VideoStructType VideoStructType { get; set; }
+            public int CarType { get; set; }
+            public string CarBrand { get; set; }
+            public int CarColor { get; set; }
+            public string PlateNumber { get; set; }
+            public int PlateType { get; set; }
+            public int BikeType { get; set; }
+            public int Sex { get; set; }
+            public int Age { get; set; }
+            public int UpperColor { get; set; }
         }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using YumekoJabami.Models;
 using Microsoft.AspNetCore.Mvc;
 using YumekoJabami.Data;
+using Claim = YumekoJabami.Models.Claim;
 
 namespace YumekoJabami.Controllers
 {
@@ -34,21 +34,9 @@ namespace YumekoJabami.Controllers
         /// </summary>
         /// <returns>查询结果</returns>
         [HttpGet]
-        public IEnumerable<TrafficClaim> GetCustomClaims()
+        public IEnumerable<Claim> GetCustomClaims()
         {
             return _context.TrafficClaims;
-        }
-
-        /// <summary>
-        /// 按系统查询权限集合
-        /// </summary>
-        /// <param name="system">系统编号</param>
-        /// <returns>查询结果</returns>
-        [HttpGet("{system}")]
-        public IEnumerable<TrafficClaim> GetCustomClaims(int system)
-        {
-            string key = $"{system:d2}";
-            return _context.TrafficClaims.Where(c=>c.Type==ClaimTypes.Webpage&&c.Value.StartsWith(key));
         }
     }
 }

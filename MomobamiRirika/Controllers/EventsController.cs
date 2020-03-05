@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi.Cache;
 using ItsukiSumeragi.Models;
 using Kakegurui.Core;
 using Kakegurui.WebExtensions;
@@ -128,7 +127,7 @@ namespace MomobamiRirika.Controllers
         public List<TrafficChart<int, int>> CountRankByRoad([FromQuery]DateTime startTime, [FromQuery]DateTime endTime)
         {
             return _context.Events
-                .Where(e => _memoryCache.GetRegion(e.DataId,new TrafficRegion{Channel = new TrafficChannel()}).Channel.CrossingId != null
+                .Where(e => _memoryCache.GetRegion(e.DataId,new TrafficRegion{Channel = new DensityChannel()}).Channel.CrossingId != null
                             && e.DateTime >= startTime && e.DateTime < endTime)
                 .Select(e => new TrafficEvent
                 {
@@ -144,7 +143,7 @@ namespace MomobamiRirika.Controllers
                 {
                     Axis = g.Key,
                     Value = g.Count(),
-                    Remark = _memoryCache.GetCrossing(g.Key,new TrafficRoadCrossing()).CrossingName
+                    Remark = _memoryCache.GetCrossing(g.Key,new RoadCrossing()).CrossingName
                 }).ToList();
         }
 
@@ -181,7 +180,7 @@ namespace MomobamiRirika.Controllers
         public List<TrafficChart<int, int>> SpanRankByRoad([FromQuery]DateTime startTime, [FromQuery]DateTime endTime)
         {
             return _context.Events
-                .Where(e => _memoryCache.GetRegion(e.DataId, new TrafficRegion { Channel = new TrafficChannel() }).Channel.CrossingId != null
+                .Where(e => _memoryCache.GetRegion(e.DataId, new TrafficRegion { Channel = new DensityChannel() }).Channel.CrossingId != null
                             && e.EndTime != null && e.DateTime >= startTime && e.DateTime < endTime)
                 .Select(e => new TrafficEvent
                 {
@@ -197,7 +196,7 @@ namespace MomobamiRirika.Controllers
                 {
                     Axis = g.Key,
                     Value = Convert.ToInt32(g.Sum(f => (f.EndTime.Value - f.DateTime).TotalSeconds / 60.0)),
-                    Remark = _memoryCache.GetCrossing(g.Key, new TrafficRoadCrossing()).CrossingName
+                    Remark = _memoryCache.GetCrossing(g.Key, new RoadCrossing()).CrossingName
                 })
                 .ToList();
         }

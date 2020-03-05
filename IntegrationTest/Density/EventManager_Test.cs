@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi.Cache;
-using ItsukiSumeragi.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MomobamiRirika.Cache;
 using MomobamiRirika.Controllers;
 using MomobamiRirika.Data;
 using MomobamiRirika.Models;
@@ -22,16 +21,16 @@ namespace IntegrationTest.Density
             DateTime startDate = new DateTime(startYear, startMonth, startDay);
             DateTime endDate = new DateTime(endYear, endMonth, endDay);
             int days = Convert.ToInt32((endDate - startDate).TotalDays + 1);
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 6, 6, "",true);
+            List<DensityDevice> devices = DensityDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 6, 6, "",true);
             //创建每小时两条条数据
             EventDbSimulator.CreateData(TestInit.ServiceProvider, devices,startDate,endDate,DataCreateMode.Fixed,true);
             TestInit.RefreshDensityCache(devices);
             EventsController service = new EventsController(TestInit.ServiceProvider.GetRequiredService<DensityContext>(),
                 TestInit.ServiceProvider.GetRequiredService<IMemoryCache>());
 
-            foreach (TrafficDevice device in devices)
+            foreach (DensityDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.DensityDevice_DensityChannels)
                 {
                     var roadList = service.StatisticsByRoad(relation.Channel.CrossingId.Value,startDate, endDate.AddDays(1));
                     //验证按路口按小时分组统计次数
@@ -53,7 +52,7 @@ namespace IntegrationTest.Density
         {
             DateTime startDate = new DateTime(startYear, startMonth, startDay);
             DateTime endDate = new DateTime(endYear, endMonth, endDay);
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateDensityDevice(TestInit.ServiceProvider,1, 6, 6, "",true);
+            List<DensityDevice> devices = DensityDbSimulator.CreateDensityDevice(TestInit.ServiceProvider,1, 6, 6, "",true);
             //随机出的值表示次数，每次1分钟
             Dictionary<TrafficEvent, int> trafficEvents = EventDbSimulator.CreateData(TestInit.ServiceProvider, devices, startDate,endDate,DataCreateMode.Random,true);
             TestInit.RefreshDensityCache(devices);
@@ -155,30 +154,19 @@ namespace IntegrationTest.Density
         public void Incidence(int startYear, int startMonth, int startDay)
         {
             DateTime startDate = new DateTime(startYear, startMonth, startDay);
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 1, "", true);
+            List<DensityDevice> devices = DensityDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 1, "", true);
 
             TestInit.RefreshDensityCache(devices);
             EventsController service = new EventsController(TestInit.ServiceProvider.GetRequiredService<DensityContext>(),
                 TestInit.ServiceProvider.GetRequiredService<IMemoryCache>());
             EventDbSimulator.ResetDatabase(TestInit.ServiceProvider);
 
-            List<TrafficItem> items = new List<TrafficItem>();
-            foreach (TrafficDevice device in devices)
-            {
-                foreach (var relation in device.Device_Channels)
-                {
-                    foreach (TrafficRegion region in relation.Channel.Regions)
-                    {
-                        items.Add(region);
-                    }
-                }
-            }
 
             using (DensityContext context = TestInit.ServiceProvider.GetRequiredService<DensityContext>())
             {
-                foreach (TrafficDevice device in devices)
+                foreach (DensityDevice device in devices)
                 {
-                    foreach (var relation in device.Device_Channels)
+                    foreach (var relation in device.DensityDevice_DensityChannels)
                     {
                         foreach (TrafficRegion region in relation.Channel.Regions)
                         {
@@ -207,9 +195,9 @@ namespace IntegrationTest.Density
                     }
                 }
                 context.BulkSaveChanges(options=>options.BatchSize=1000);
-                foreach (TrafficDevice device in devices)
+                foreach (DensityDevice device in devices)
                 {
-                    foreach (var relation in device.Device_Channels)
+                    foreach (var relation in device.DensityDevice_DensityChannels)
                     {
                         foreach (TrafficRegion region in relation.Channel.Regions)
                         {
@@ -237,16 +225,16 @@ namespace IntegrationTest.Density
         [TestMethod]
         public void Last10()
         {
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 10, "", true);
+            List<DensityDevice> devices = DensityDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 10, "", true);
             TestInit.RefreshDensityCache(devices);
             EventDbSimulator.CreateData(TestInit.ServiceProvider,devices,DateTime.Today,true);
             EventsController service = new EventsController(TestInit.ServiceProvider.GetRequiredService<DensityContext>(),
                 TestInit.ServiceProvider.GetRequiredService<IMemoryCache>());
             var v=service.QueryLast10();
-            int itemCount = devices[0].Device_Channels[0].Channel.Regions.Count;
+            int itemCount = devices[0].DensityDevice_DensityChannels[0].Channel.Regions.Count;
             for (int i = 0; i < 10; ++i)
             {
-                Assert.AreEqual(v[i].DataId, devices[0].Device_Channels[0].Channel.Regions[itemCount - 1-i].DataId);
+                Assert.AreEqual(v[i].DataId, devices[0].DensityDevice_DensityChannels[0].Channel.Regions[itemCount - 1-i].DataId);
             }
         }
     }

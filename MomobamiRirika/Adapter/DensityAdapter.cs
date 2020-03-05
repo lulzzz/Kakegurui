@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ItsukiSumeragi.Models;
 using Kakegurui.Log;
 using Kakegurui.Net;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -25,7 +24,7 @@ namespace MomobamiRirika.Adapter
         /// <summary>
         /// 密度ws连接信息
         /// </summary>
-        private class Item
+        internal class Item
         {
             /// <summary>
             /// 密度客户端
@@ -46,6 +45,20 @@ namespace MomobamiRirika.Adapter
             /// 数据异常数量
             /// </summary>
             public int Failed { get; set; }
+        }
+
+        internal class DensityAdapterData
+        {
+            public DensityData data { get; set; }
+            public string type { get; set; }
+        }
+
+        internal class DensityData
+        {
+            public string record_time { get; set; }
+            public int channel_id { get; set; }
+            public int region_id { get; set; }
+            public int count { get; set; }
         }
 
         /// <summary>
@@ -138,7 +151,7 @@ namespace MomobamiRirika.Adapter
         /// </summary>
         /// <param name="device">设备</param>
         /// <returns>key</returns>
-        private string GetDeviceKey(TrafficDevice device)
+        private string GetDeviceKey(DensityDevice device)
         {
             return GetDeviceUrl(device).Authority;
         }
@@ -148,7 +161,7 @@ namespace MomobamiRirika.Adapter
         /// </summary>
         /// <param name="device">设备</param>
         /// <returns>url</returns>
-        private Uri GetDeviceUrl(TrafficDevice device)
+        private Uri GetDeviceUrl(DensityDevice device)
         {
             return new Uri($"ws://{device.Ip}:{device.DataPort}/{Url}");
         }
@@ -159,14 +172,14 @@ namespace MomobamiRirika.Adapter
         /// <param name="devices">设备集合</param>
         /// <param name="densityBranchBlock">密度数据块分支</param>
         /// <param name="eventBranchBlock">事件数据块分支</param>
-        public void Start(List<TrafficDevice> devices, DensityBranchBlock densityBranchBlock,EventBranchBlock eventBranchBlock)
+        public void Start(List<DensityDevice> devices, DensityBranchBlock densityBranchBlock,EventBranchBlock eventBranchBlock)
         {
             _startTime = DateTime.Now;
 
             _densityBranchBlock = densityBranchBlock;
             _eventBranchBlock = eventBranchBlock;
 
-            foreach (TrafficDevice device in devices.Where(d => d.Device_Channels.Count > 0 && d.Device_Channels.Any(r => r.Channel.Regions.Count > 0)))
+            foreach (DensityDevice device in devices.Where(d => d.DensityDevice_DensityChannels.Count > 0 && d.DensityDevice_DensityChannels.Any(r => r.Channel.Regions.Count > 0)))
             {
                 WebSocketClientChannel websocket = new WebSocketClientChannel(GetDeviceUrl(device));
                 websocket.WebSocketReceived += ReceiveHandler;
@@ -178,14 +191,14 @@ namespace MomobamiRirika.Adapter
             }
         }
 
-        public void Reset(List<TrafficDevice> devices)
+        public void Reset(List<DensityDevice> devices)
         {
             _startTime = DateTime.Now;
 
             foreach (var client in _clients)
             {
                 bool exist = false;
-                foreach (TrafficDevice device in devices)
+                foreach (DensityDevice device in devices)
                 {
                     if (client.Key == GetDeviceKey(device))
                     {
@@ -200,7 +213,7 @@ namespace MomobamiRirika.Adapter
                 }
             }
 
-            foreach (TrafficDevice device in devices.Where(d => d.Device_Channels.Count > 0 && d.Device_Channels.Any(c => c.Channel.Regions.Count > 0)))
+            foreach (DensityDevice device in devices.Where(d => d.DensityDevice_DensityChannels.Count > 0 && d.DensityDevice_DensityChannels.Any(c => c.Channel.Regions.Count > 0)))
             {
                 bool exist = false;
                 foreach (var client in _clients)
@@ -258,19 +271,5 @@ namespace MomobamiRirika.Adapter
             return Task.FromResult(status == HealthStatus.Healthy ? HealthCheckResult.Healthy("数据源全部连接正常", data) : HealthCheckResult.Degraded("有连接异常的数据源", null, data));
         }
         #endregion
-    }
-
-    public class DensityAdapterData
-    {
-        public DensityData data { get; set; }
-        public string type { get; set; }
-    }
-
-    public class DensityData
-    {
-        public string record_time { get; set; }
-        public int channel_id { get; set; }
-        public int region_id { get; set; }
-        public int count { get; set; }
     }
 }

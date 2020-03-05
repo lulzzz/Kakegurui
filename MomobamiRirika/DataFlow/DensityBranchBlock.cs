@@ -17,7 +17,7 @@ namespace MomobamiRirika.DataFlow
     /// <summary>
     /// 密度分支数据块
     /// </summary>
-    public class DensityBranchBlock : TrafficBranchBlock<TrafficDensity>
+    public class DensityBranchBlock : TrafficBranchBlock<TrafficDensity,DensityDevice>
     {
         /// <summary>
         /// 区域数据块项
@@ -106,9 +106,9 @@ namespace MomobamiRirika.DataFlow
             _dbBlock = new DensityDbBlock(ThreadCount, _serviceProvider);
 
             _regionBlocks.Clear();
-            foreach (TrafficDevice device in _devices)
+            foreach (DensityDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.DensityDevice_DensityChannels)
                 {
                     foreach (TrafficRegion region in relation.Channel.Regions)
                     {
@@ -133,11 +133,11 @@ namespace MomobamiRirika.DataFlow
             _sixtyBatchBlock.LinkTo(_dbBlock.InputBlock, new DataflowLinkOptions { PropagateCompletion = false });
         }
 
-        protected override void ResetCore(List<TrafficDevice> devices)
+        protected override void ResetCore(List<DensityDevice> devices)
         {
-            foreach (TrafficDevice newDevice in devices)
+            foreach (DensityDevice newDevice in devices)
             {
-                foreach (var relation in newDevice.Device_Channels)
+                foreach (var relation in newDevice.DensityDevice_DensityChannels)
                 {
                     foreach (TrafficRegion region in relation.Channel.Regions)
                     {
@@ -157,13 +157,13 @@ namespace MomobamiRirika.DataFlow
                 }
             }
 
-            foreach (TrafficDevice oldDevice in _devices)
+            foreach (DensityDevice oldDevice in _devices)
             {
-                foreach (var relation in oldDevice.Device_Channels)
+                foreach (var relation in oldDevice.DensityDevice_DensityChannels)
                 {
                     foreach (TrafficRegion region in relation.Channel.Regions)
                     {
-                        if (devices.SelectMany(d => d.Device_Channels)
+                        if (devices.SelectMany(d => d.DensityDevice_DensityChannels)
                             .Select(r => r.Channel)
                             .SelectMany(c => c.Regions)
                             .All(r => r.MatchId != region.MatchId))

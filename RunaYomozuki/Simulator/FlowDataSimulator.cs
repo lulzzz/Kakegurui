@@ -1,8 +1,6 @@
 ﻿using System;
 using Kakegurui.Core;
 using Kakegurui.WebExtensions;
-using MomobamiKirari.Adapter;
-using ItsukiSumeragi.Codes.Flow;
 
 namespace RunaYomozuki.Simulator
 {
@@ -11,6 +9,54 @@ namespace RunaYomozuki.Simulator
     /// </summary>
     public class FlowDataSimulator: TrafficDataSimulator
     {
+        internal class FlowAdapterData
+        {
+            public int Code { get; set; }
+            public LaneAdapterData[] Data { get; set; }
+            public LaneAdapterData[] Datas { get; set; }
+        }
+
+        internal class LaneAdapterData
+        {
+            public string ChannelId { get; set; }
+
+            public string LaneId { get; set; }
+
+            public long Timestamp { get; set; }
+
+            public DateTime DateTime => TimeStampConvert.ToLocalDateTime(Timestamp);
+
+            public int Cars { get; set; }
+
+            public int Buss { get; set; }
+
+            public int Trucks { get; set; }
+
+            public int Vans { get; set; }
+
+            public int Tricycles { get; set; }
+
+            public int Vehicle => Cars + Buss + Tricycles + Trucks + Vans;
+
+            public int Motorcycles { get; set; }
+
+            public int Bikes { get; set; }
+
+            public int Persons { get; set; }
+
+            public int AverageSpeed { get; set; }
+
+            public double HeadDistance { get; set; }
+
+            public double HeadSpace { get; set; }
+
+            public int TimeOccupancy { get; set; }
+
+            public int Occupancy { get; set; }
+
+            public TrafficStatus TrafficStatus { get; set; }
+        }
+
         /// <summary>
         /// 模拟数据生成方式
         /// </summary>

@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using ItsukiSumeragi.DataFlow;
-using ItsukiSumeragi.Models;
 using Kakegurui.Log;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -17,7 +16,7 @@ namespace MomobamiKirari.DataFlow
     /// <summary>
     /// 流量分支数据块
     /// </summary>
-    public class FlowBranchBlock : TrafficBranchBlock<LaneFlow>
+    public class FlowBranchBlock : TrafficBranchBlock<LaneFlow,FlowDevice>
     {
         /// <summary>
         /// 车道数据块项
@@ -32,7 +31,7 @@ namespace MomobamiKirari.DataFlow
             /// <summary>
             /// 路段
             /// </summary>
-            public TrafficRoadSection RoadSection { get; set; }
+            public RoadSection RoadSection { get; set; }
 
             /// <summary>
             /// 车道检测长度
@@ -118,11 +117,11 @@ namespace MomobamiKirari.DataFlow
             _sixtyBatchBlock.LinkTo(_laneFlowDbBlock.InputBlock, new DataflowLinkOptions { PropagateCompletion = false });
 
             _laneBlocks.Clear();
-            foreach (TrafficDevice device in _devices)
+            foreach (FlowDevice device in _devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         LaneFlowStatisticsBlock laneBlock = new LaneFlowStatisticsBlock(_serviceProvider);
                         laneBlock.LinkTo(_oneBatchBlock, _fiveBatchBlock, _fifteenBatchBlock, _sixtyBatchBlock);
@@ -140,13 +139,13 @@ namespace MomobamiKirari.DataFlow
             }
         }
 
-        protected override void ResetCore(List<TrafficDevice> devices)
+        protected override void ResetCore(List<FlowDevice> devices)
         {
-            foreach (TrafficDevice newDevice in devices)
+            foreach (FlowDevice newDevice in devices)
             {
-                foreach (var relation in newDevice.Device_Channels)
+                foreach (var relation in newDevice.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         if (!_laneBlocks.ContainsKey(lane.DataId))
                         {
@@ -168,13 +167,13 @@ namespace MomobamiKirari.DataFlow
                 }
             }
 
-            foreach (TrafficDevice oldDevice in _devices)
+            foreach (FlowDevice oldDevice in _devices)
             {
-                foreach (var relation in oldDevice.Device_Channels)
+                foreach (var relation in oldDevice.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
-                        if (devices.SelectMany(d => d.Device_Channels)
+                        if (devices.SelectMany(d => d.FlowDevice_FlowChannels)
                             .Select(r => r.Channel)
                             .SelectMany(c => c.Lanes)
                             .All(l => l.DataId != lane.DataId))

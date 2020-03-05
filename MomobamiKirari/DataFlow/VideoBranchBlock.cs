@@ -13,7 +13,7 @@ namespace MomobamiKirari.DataFlow
     /// <summary>
     /// 视频结构化分支数据块
     /// </summary>
-    public class VideoBranchBlock : TrafficBranchBlock<VideoStruct>
+    public class VideoBranchBlock : TrafficBranchBlock<VideoStruct, FlowDevice>
     {
         /// <summary>
         /// 机动车数据库数据块

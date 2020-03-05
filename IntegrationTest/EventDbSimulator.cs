@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using ItsukiSumeragi.Models;
 using Microsoft.Extensions.DependencyInjection;
 using MomobamiRirika.Data;
 using MomobamiRirika.DataFlow;
@@ -19,7 +18,7 @@ namespace IntegrationTest
             }
         }
 
-        public static Dictionary<TrafficEvent, int> CreateData(IServiceProvider serviceProvider,List<TrafficDevice> devices, DateTime startDate, DateTime endDate,DataCreateMode mode,bool initDatabase=false)
+        public static Dictionary<TrafficEvent, int> CreateData(IServiceProvider serviceProvider,List<DensityDevice> devices, DateTime startDate, DateTime endDate,DataCreateMode mode,bool initDatabase=false)
         {
             if (initDatabase)
             {
@@ -35,9 +34,9 @@ namespace IntegrationTest
                     Random random = new Random();
 
                     int hours = Convert.ToInt32((endDate - startDate).TotalHours + 24);
-                    foreach (TrafficDevice device in devices)
+                    foreach (DensityDevice device in devices)
                     {
-                        foreach (var relation in device.Device_Channels)
+                        foreach (var relation in device.DensityDevice_DensityChannels)
                         {
                             foreach (TrafficRegion region in relation.Channel.Regions)
                             {
@@ -93,7 +92,7 @@ namespace IntegrationTest
         }
 
 
-        public static void CreateData(IServiceProvider serviceProvider, List<TrafficDevice> devices, DateTime startDate, bool initDatabase = false)
+        public static void CreateData(IServiceProvider serviceProvider, List<DensityDevice> devices, DateTime startDate, bool initDatabase = false)
         {
             if (initDatabase)
             {
@@ -105,9 +104,9 @@ namespace IntegrationTest
                 EventBranchBlock branch = new EventBranchBlock(serviceScope.ServiceProvider);
                 branch.Open(devices);
                 int h = 0;
-                foreach (TrafficDevice device in devices)
+                foreach (DensityDevice device in devices)
                 {
-                    foreach (var relation in device.Device_Channels)
+                    foreach (var relation in device.DensityDevice_DensityChannels)
                     {
                         foreach (TrafficRegion region in relation.Channel.Regions)
                         {

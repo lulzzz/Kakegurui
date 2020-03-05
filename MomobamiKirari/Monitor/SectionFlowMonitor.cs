@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi.Cache;
-using ItsukiSumeragi.Codes.Device;
-using ItsukiSumeragi.Codes.Flow;
-using ItsukiSumeragi.Models;
 using Kakegurui.Log;
 using Kakegurui.Monitor;
 using Microsoft.Extensions.Caching.Distributed;
@@ -13,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MomobamiKirari.Cache;
+using MomobamiKirari.Codes;
 using MomobamiKirari.Data;
 using MomobamiKirari.Models;
 
@@ -128,9 +125,9 @@ namespace MomobamiKirari.Monitor
         {
             var totalLanes = _memoryCache.GetLanes();
             time = time.Add(-_span);
-            foreach (TrafficRoadSection section in _memoryCache.GetSections())
+            foreach (RoadSection section in _memoryCache.GetSections())
             {
-                List<TrafficLane> sectionLanes = totalLanes
+                List<Lane> sectionLanes = totalLanes
                     .Where(l => l.Channel.SectionId.HasValue && l.Channel.SectionId.Value == section.SectionId)
                     .ToList();
                 SectionFlow sectionFlow = new SectionFlow
@@ -288,7 +285,7 @@ namespace MomobamiKirari.Monitor
                     .Cast<TrafficStatus>()
                     .ToDictionary(trafficStatus => (int)trafficStatus, trafficStatus => new SectionsSpeed())
             };
-            List<TrafficRoadSection> sections = _memoryCache.GetSections();
+            List<RoadSection> sections = _memoryCache.GetSections();
             //计算当前分钟路段交通状态
             Dictionary<TrafficStatus, List<SectionFlow>> trafficStatusFlows = Enum.GetValues(typeof(TrafficStatus)).Cast<TrafficStatus>().ToDictionary(trafficStatus => trafficStatus, trafficStatus => new List<SectionFlow>());
             foreach (var section in sections)

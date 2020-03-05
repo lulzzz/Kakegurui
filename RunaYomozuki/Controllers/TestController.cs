@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using MomobamiKirari.Monitor;
-using MomobamiRirika.Monitor;
 
 namespace RunaYomozuki.Controllers
 {
@@ -9,6 +7,51 @@ namespace RunaYomozuki.Controllers
     [ApiController]
     public class TestController : ControllerBase
     {
+        public class DensityChannelList
+        {
+            public int Code { get; set; }
+            public DensityChannel[] Data { get; set; }
+        }
+
+        public class DensityChannel
+        {
+            public int ChannelId { get; set; }
+            public int Status { get; set; }
+            public string RtmpUrl { get; set; }
+        }
+        public class FlowChannellistClass
+        {
+            public int Code { get; set; }
+            public ChannelDataClass Data { get; set; }
+        }
+
+        public class ChannelDataClass
+        {
+            public int Totalnumber { get; set; }
+
+            public ChannelinfolistClass[] Channelinfolist { get; set; }
+        }
+
+        public class ChannelinfolistClass
+        {
+            public string ChannelId { get; set; }
+            public int ChannelStatus { get; set; }
+        }
+
+        public class DeviceClass
+        {
+            public int Code { get; set; }
+            public DeviceDataClass Data { get; set; }
+        }
+
+        public class DeviceDataClass
+        {
+            public string Licstatus { get; set; }
+            public string Space { get; set; }
+            public string Systime { get; set; }
+            public string Runtime { get; set; }
+        }
+
         private readonly IConfiguration _configuration;
 
         public TestController(IConfiguration configuration)

@@ -1,28 +1,28 @@
 ﻿using System;
 using Kakegurui.WebExtensions;
 using Microsoft.AspNetCore.Mvc;
+using MomobamiKirari.Codes;
 using MomobamiKirari.Models;
-using ItsukiSumeragi.Codes.Flow;
 using MomobamiKirari.Managers;
 
 namespace MomobamiKirari.Controllers
 {
     /// <summary>
-    /// 机动车视频结构化查询
+    /// 机动车视频结构化
     /// </summary>
     [Produces("application/json")]
     [Route("api/[controller]")]
     public class VideoStructsController : Controller
     {
         /// <summary>
-        /// 视频结构化数据库
+        /// 路段流量数据库操作实例
         /// </summary>
         private readonly VideoStructManager _manager;
 
         /// <summary>
         /// 构造函数
         /// </summary>
-        /// <param name="manager">视频结构化查询</param>
+        /// <param name="manager">路段流量数据库操作实例</param>
         public VideoStructsController(VideoStructManager manager)
         {
             _manager = manager;

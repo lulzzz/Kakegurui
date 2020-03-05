@@ -1,9 +1,6 @@
 ﻿using System;
-using ItsukiSumeragi.Models;
 using ItsukiSumeragi.Monitor;
-using Kakegurui.Core;
 using Kakegurui.Log;
-using Kakegurui.Monitor;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MomobamiKirari.Data;
@@ -16,7 +13,7 @@ namespace MomobamiKirari.Monitor
     /// <summary>
     /// 视频结构化数据分支切换
     /// </summary>
-    public class VideoSwitchMonitor: SwitchMonitor<VideoStruct>
+    public class VideoSwitchMonitor: SwitchMonitor<VideoStruct, FlowDevice>
     {
 
         /// <summary>

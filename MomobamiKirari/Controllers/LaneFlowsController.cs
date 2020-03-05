@@ -7,7 +7,7 @@ using Kakegurui.WebExtensions;
 using Microsoft.AspNetCore.Mvc;
 using MomobamiKirari.Managers;
 using MomobamiKirari.Models;
-using ItsukiSumeragi.Codes.Flow;
+using MomobamiKirari.Codes;
 
 namespace MomobamiKirari.Controllers
 {
@@ -19,14 +19,14 @@ namespace MomobamiKirari.Controllers
     public class LaneFlowsController : Controller
     {
         /// <summary>
-        /// 流量服务
+        /// 车道流量数据库操作实例
         /// </summary>
         private readonly LaneFlowManager _manager;
 
         /// <summary>
         /// 构造函数
         /// </summary>
-        /// <param name="manager">流量服务实例</param>
+        /// <param name="manager">车道流量数据库操作实例</param>
         public LaneFlowsController(LaneFlowManager manager)
         {
             _manager = manager;

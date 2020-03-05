@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi.Models;
 using Kakegurui.Core;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MomobamiKirari.Controllers;
 using MomobamiKirari.Managers;
+using MomobamiKirari.Managers.Alone;
+using MomobamiKirari.Models;
 
 namespace IntegrationTest.Flow
 {
@@ -19,7 +17,7 @@ namespace IntegrationTest.Flow
         public void QueryChannelDayStatus()
         {
             DateTime today = DateTime.Today;
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
+            List<FlowDevice> devices = FlowDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
             List<DateTime> dates = new List<DateTime>
             {
                 today.AddYears(-1),
@@ -32,14 +30,13 @@ namespace IntegrationTest.Flow
 
             FlowDbSimulator.CreateData(TestInit.ServiceProvider, devices, DataCreateMode.Fixed, dates, true);
 
-            ChannelFlowsController service = new ChannelFlowsController(TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>()
-                , TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<IMemoryCache>()
-                , TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<IDistributedCache>());
+            ChannelFlowsManager service = TestInit.ServiceProvider.GetRequiredService<ChannelFlowsManager>();
+
             LaneFlowManager_Alone manager = TestInit.ServiceProvider.GetRequiredService<LaneFlowManager_Alone>();
 
-            foreach (TrafficDevice device in devices)
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int laneCount = relation.Channel.Lanes.Count;
 
@@ -185,20 +182,18 @@ namespace IntegrationTest.Flow
         [TestMethod]
         public void QueryChannelMinuteStatus()
         {
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2,true);
+            List<FlowDevice> devices = FlowDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2,true);
 
             TestInit.RefreshFlowCache(devices);
 
             FlowDbSimulator.CreateData(TestInit.ServiceProvider, devices, DataCreateMode.Fixed, DateTime.Today, true);
 
-            ChannelFlowsController service = new ChannelFlowsController(TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<LaneFlowManager_Alone>()
-                , TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<IMemoryCache>()
-                , TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<IDistributedCache>());
-            LaneFlowManager_Alone manager = TestInit.ServiceProvider.GetRequiredService<LaneFlowManager_Alone>();
 
-            foreach (TrafficDevice device in devices)
+            ChannelFlowsManager service = TestInit.ServiceProvider.GetRequiredService<ChannelFlowsManager>();
+
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int laneCount = relation.Channel.Lanes.Count;
 

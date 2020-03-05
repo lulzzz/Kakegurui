@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi.Cache;
-using ItsukiSumeragi.Codes.Flow;
 using ItsukiSumeragi.Models;
 using Kakegurui.Core;
 using Microsoft.Extensions.Caching.Memory;
+using MomobamiKirari.Cache;
+using MomobamiKirari.Codes;
+using MomobamiKirari.Data;
 using MomobamiKirari.Models;
 
 namespace MomobamiKirari.Managers
@@ -13,8 +14,13 @@ namespace MomobamiKirari.Managers
     /// <summary>
     /// 流量数据查询基类
     /// </summary>
-    public abstract class LaneFlowManager
+    public class LaneFlowManager
     {
+        /// <summary>
+        /// 数据库实例
+        /// </summary>
+        private readonly FlowContext _flowContext;
+
         /// <summary>
         /// 缓存
         /// </summary>
@@ -24,8 +30,10 @@ namespace MomobamiKirari.Managers
         /// 构造函数
         /// </summary>
         /// <param name="memoryCache">缓存</param>
-        protected LaneFlowManager(IMemoryCache memoryCache)
+        /// <param name="flowContext">数据库实例</param>
+        public LaneFlowManager(IMemoryCache memoryCache, FlowContext flowContext)
         {
+            _flowContext = flowContext;
             _memoryCache = memoryCache;
         }
 
@@ -209,6 +217,51 @@ namespace MomobamiKirari.Managers
         }
 
         /// <summary>
+        /// 查询列表
+        /// </summary>
+        /// <param name="queryables">数据源集合</param>
+        /// <param name="dataIds">车道数据编号集合</param>
+        /// <param name="level">时间级别</param>
+        /// <param name="startTime">开始时间</param>
+        /// <param name="endTime">结束时间</param>
+        /// <returns>查询结果</returns>
+        private List<LaneFlow> SelectList(List<IQueryable<LaneFlow>> queryables, HashSet<string> dataIds, DateTimeLevel level, DateTime startTime, DateTime endTime)
+        {
+            List<LaneFlow> result = new List<LaneFlow>();
+            foreach (IQueryable<LaneFlow> queryable in queryables)
+            {
+                try
+                {
+                    result.AddRange(Group(Where(queryable, dataIds, level, startTime, endTime), level)
+                        .Select(g => new LaneFlow
+                        {
+                            DataId = g.First().DataId,
+                            DateTime = g.Key,
+                            Cars = g.Sum(f => f.Cars),
+                            Tricycles = g.Sum(f => f.Tricycles),
+                            Trucks = g.Sum(f => f.Trucks),
+                            Vans = g.Sum(f => f.Vans),
+                            Buss = g.Sum(f => f.Buss),
+                            Bikes = g.Sum(f => f.Bikes),
+                            Motorcycles = g.Sum(f => f.Motorcycles),
+                            Persons = g.Sum(f => f.Persons),
+                            TravelTime = g.Sum(f => f.TravelTime),
+                            Distance = g.Sum(f => f.Distance),
+                            HeadDistance = g.Sum(f => f.HeadDistance),
+                            Occupancy = g.Sum(f => f.Occupancy),
+                            TimeOccupancy = g.Sum(f => f.TimeOccupancy),
+                            Count = g.Sum(f => f.Count)
+                        }).ToList());
+                }
+                catch
+                {
+
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 按路口查询流量数据
         /// </summary>
         /// <param name="crossingId">路口编号</param>
@@ -219,7 +272,7 @@ namespace MomobamiKirari.Managers
         /// <returns>流量数据集合</returns>
         public List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryChartsByCrossing(int crossingId, DateTimeLevel level, FlowType[] flowTypes, DateTime[] startTimes, DateTime[] endTimes)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => l.Channel.CrossingId == crossingId)
                 .ToList();
             return QueryCharts(lanes, level, startTimes, endTimes, startTimes[0], flowTypes);
@@ -237,7 +290,7 @@ namespace MomobamiKirari.Managers
         /// <returns>流量数据集合</returns>
         public List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryChartsByCrossing(int crossingId, int[] directions, DateTimeLevel level, FlowType[] flowTypes, DateTime[] startTimes, DateTime[] endTimes)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => l.Channel.CrossingId == crossingId && directions.Contains(l.Direction))
                 .ToList();
             return QueryCharts(lanes, level, startTimes, endTimes, startTimes[0], flowTypes);
@@ -256,7 +309,7 @@ namespace MomobamiKirari.Managers
         /// <returns>流量数据集合</returns>
         public List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryChartsByCrossing(int crossingId, int direction, int[] flowDirections, DateTimeLevel level, FlowType[] flowTypes, DateTime[] startTimes, DateTime[] endTimes)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => l.Channel.CrossingId == crossingId
                             && l.Direction == direction
                             && flowDirections.Contains(l.FlowDirection))
@@ -275,7 +328,7 @@ namespace MomobamiKirari.Managers
         /// <returns>流量数据集合</returns>
         public List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryChartsBySection(int sectionId, DateTimeLevel level, FlowType[] flowTypes, DateTime[] startTimes, DateTime[] endTimes)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => l.Channel.SectionId == sectionId)
                 .ToList();
             return QueryCharts(lanes, level, startTimes, endTimes, startTimes[0], flowTypes);
@@ -293,7 +346,7 @@ namespace MomobamiKirari.Managers
         /// <returns>流量数据集合</returns>
         public List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryChartsBySection(int sectionId, int[] flowDirections, DateTimeLevel level, FlowType[] flowTypes, DateTime[] startTimes, DateTime[] endTimes)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => l.Channel.SectionId == sectionId
                             && flowDirections.Contains(l.FlowDirection))
                 .ToList();
@@ -313,7 +366,7 @@ namespace MomobamiKirari.Managers
         public List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryCharts(string dataId, DateTimeLevel level, DateTime[] startTimes, DateTime[] endTimes, DateTime baseTime,
             FlowType[] flowTypes = null)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => l.DataId == dataId)
                 .ToList();
             return QueryCharts(lanes, level, startTimes, endTimes, baseTime, flowTypes);
@@ -330,7 +383,7 @@ namespace MomobamiKirari.Managers
         /// <returns>按时间段划分的图表数据</returns>
         public List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryCharts(HashSet<string> dataIds, DateTimeLevel level, DateTime[] startTimes, DateTime[] endTimes, FlowType[] flowTypes = null)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => dataIds.Contains(l.DataId))
                 .ToList();
             return QueryCharts(lanes, level, startTimes, endTimes, startTimes[0], flowTypes);
@@ -349,7 +402,7 @@ namespace MomobamiKirari.Managers
         public List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryCharts(HashSet<string> dataIds, DateTimeLevel level, DateTime[] startTimes, DateTime[] endTimes, DateTime baseTime,
             FlowType[] flowTypes = null)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => dataIds.Contains(l.DataId))
                 .ToList();
             return QueryCharts(lanes, level, startTimes, endTimes, baseTime, flowTypes);
@@ -365,9 +418,22 @@ namespace MomobamiKirari.Managers
         /// <param name="baseTime">基准时间</param>
         /// <param name="flowTypes">流量密度数据</param> 
         /// <returns>流量数据集合</returns>
-        public abstract List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryCharts(List<TrafficLane> lanes,
-            DateTimeLevel level, DateTime[] startTimes, DateTime[] endTimes, DateTime baseTime,
-            FlowType[] flowTypes = null);
+        public virtual List<List<TrafficChart<DateTime, int, LaneFlow>>> QueryCharts(List<Lane> lanes, DateTimeLevel level, DateTime[] startTimes, DateTime[] endTimes, DateTime baseTime, FlowType[] flowTypes = null)
+        {
+            List<List<TrafficChart<DateTime, int, LaneFlow>>> result = new List<List<TrafficChart<DateTime, int, LaneFlow>>>();
+            HashSet<string> dataIds = lanes.Select(l => l.DataId).ToHashSet();
+            for (int i = 0; i < startTimes.Length; ++i)
+            {
+                List<TrafficChart<DateTime, int, LaneFlow>> item = new List<TrafficChart<DateTime, int, LaneFlow>>();
+                foreach (IQueryable<LaneFlow> queryable in BranchDbConvert.GetQuerables(startTimes[i], endTimes[i], _flowContext.Queryable(level)))
+                {
+                    item.AddRange(SelectChart(Where(queryable, dataIds, level, startTimes[i], endTimes[i]), level, startTimes[0], startTimes[i], flowTypes));
+                }
+                result.Add(item);
+            }
+            return result;
+        }
+
 
         /// <summary>
         /// 按车道查询流量数据集合
@@ -379,7 +445,7 @@ namespace MomobamiKirari.Managers
         /// <returns>流量数据集合</returns>
         public List<LaneFlow> QueryList(string dataId, DateTimeLevel level, DateTime startTime, DateTime endTime)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => l.DataId == dataId)
                 .ToList();
             return QueryList(lanes, level, new[] { startTime }, new[] { endTime })[0];
@@ -395,7 +461,7 @@ namespace MomobamiKirari.Managers
         /// <returns>流量数据集合</returns>
         public List<LaneFlow> QueryList(HashSet<string> dataIds, DateTimeLevel level, DateTime startTime, DateTime endTime)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => dataIds.Contains(l.DataId))
                 .ToList();
             return QueryList(lanes, level, new[] { startTime }, new[] { endTime })[0];
@@ -411,7 +477,7 @@ namespace MomobamiKirari.Managers
         /// <returns>流量数据集合</returns>
         public List<List<LaneFlow>> QueryList(HashSet<string> dataIds, DateTimeLevel level, DateTime[] startTimes, DateTime[] endTimes)
         {
-            List<TrafficLane> lanes = _memoryCache.GetLanes()
+            List<Lane> lanes = _memoryCache.GetLanes()
                 .Where(l => dataIds.Contains(l.DataId))
                 .ToList();
             return QueryList(lanes, level, startTimes,endTimes);
@@ -425,7 +491,9 @@ namespace MomobamiKirari.Managers
         /// <param name="startTimes">开始时间集合</param>
         /// <param name="endTimes">结束时间集合</param>
         /// <returns>流量数据集合</returns>
-        public abstract List<List<LaneFlow>> QueryList(List<TrafficLane> lanes, DateTimeLevel level,
-            DateTime[] startTimes, DateTime[] endTimes);
+        public virtual List<List<LaneFlow>> QueryList(List<Lane> lanes, DateTimeLevel level, DateTime[] startTimes, DateTime[] endTimes)
+        {
+            return startTimes.Select((t, i) => SelectList(BranchDbConvert.GetQuerables(t, endTimes[i], _flowContext.Queryable(level)), lanes.Select(l => l.DataId).ToHashSet(), level, t, endTimes[i])).ToList();
+        }
     }
 }

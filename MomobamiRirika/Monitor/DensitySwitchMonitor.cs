@@ -13,7 +13,7 @@ namespace MomobamiRirika.Monitor
     /// <summary>
     /// 密度数据分支切换
     /// </summary>
-    public class DensitySwitchMonitor : SwitchMonitor<TrafficDensity>
+    public class DensitySwitchMonitor : SwitchMonitor<TrafficDensity,DensityDevice>
     {
 
         /// <summary>

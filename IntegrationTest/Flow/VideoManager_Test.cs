@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi.Models;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MomobamiKirari.Controllers;
-using MomobamiKirari.Data;
-using ItsukiSumeragi.Codes.Flow;
-using MomobamiKirari.Managers;
+using MomobamiKirari.Codes;
+using MomobamiKirari.Managers.Alone;
+using MomobamiKirari.Models;
 
 namespace IntegrationTest.Flow
 {
@@ -22,16 +20,16 @@ namespace IntegrationTest.Flow
             DateTime startDate = new DateTime(2019, 4, 29);
             DateTime endDate = new DateTime(2019, 4, 29);
             int days = Convert.ToInt32((endDate - startDate).TotalDays+1);
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
+            List<FlowDevice> devices = FlowDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
             TestInit.RefreshFlowCache(devices);
             VideoStructDbSimulator.CreateData(TestInit.ServiceProvider,devices,DataCreateMode.Fixed, startDate, endDate, true);
             VideoStructsController controller = new VideoStructsController(
                 TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<VideoStructManager_Alone>());
 
             //按路口查询
-            foreach (TrafficDevice device in devices)
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int laneCount = relation.Channel.Lanes.Count;
                     var vehicles = controller.QueryByCrossing(relation.Channel.CrossingId.Value, VideoStructType.机动车, startDate, endDate.AddDays(1), 0, 0, true);
@@ -44,9 +42,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口方向查询
-            foreach (TrafficDevice device in devices)
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int[] directions = relation.Channel.Lanes.Select(l => l.Direction).Distinct().ToArray();
                     foreach (int direction in directions)
@@ -63,9 +61,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路段查询
-            foreach (TrafficDevice device in devices)
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int laneCount = relation.Channel.Lanes.Count;
                     var vehicles = controller.QueryBySection(relation.Channel.SectionId.Value, VideoStructType.机动车, startDate, endDate.AddDays(1), 0, 0, true);
@@ -86,7 +84,7 @@ namespace IntegrationTest.Flow
             DateTime startDate2 = new DateTime(2019, 5, 1);
             DateTime endDate2 = new DateTime(2019, 5, 1);
             int days = Convert.ToInt32((endDate2 - startDate1).TotalDays + 1);
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
+            List<FlowDevice> devices = FlowDbSimulator.CreateFlowDevice(TestInit.ServiceProvider, 1, 1, 2, true);
             TestInit.RefreshFlowCache(devices);
             VideoStructDbSimulator.CreateData(TestInit.ServiceProvider, devices, DataCreateMode.Fixed, startDate1, endDate1, true);
             VideoStructDbSimulator.CreateData(TestInit.ServiceProvider, devices, DataCreateMode.Fixed, startDate2, endDate2);
@@ -95,9 +93,9 @@ namespace IntegrationTest.Flow
                 TestInit.ServiceProvider.CreateScope().ServiceProvider.GetRequiredService<VideoStructManager_Alone>());
 
             //按路口查询
-            foreach (TrafficDevice device in devices)
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int laneCount = relation.Channel.Lanes.Count;
                     var vehicles = controller.QueryByCrossing(relation.Channel.CrossingId.Value, VideoStructType.机动车, startDate1, endDate2.AddDays(1), 0, 0, true);
@@ -110,9 +108,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路口方向查询
-            foreach (TrafficDevice device in devices)
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int[] directions = relation.Channel.Lanes.Select(l => l.Direction).Distinct().ToArray();
                     foreach (int direction in directions)
@@ -129,9 +127,9 @@ namespace IntegrationTest.Flow
             }
 
             //按路段查询
-            foreach (TrafficDevice device in devices)
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
                     int laneCount = relation.Channel.Lanes.Count;
                     var vehicles = controller.QueryBySection(relation.Channel.SectionId.Value, VideoStructType.机动车, startDate1, endDate2.AddDays(1), 0, 0, true);

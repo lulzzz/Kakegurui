@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using YumekoJabami.Models;
 using Microsoft.AspNetCore.Identity;
@@ -59,14 +58,14 @@ namespace YumekoJabami.Controllers
                 UserRole userRoleRoles = new UserRole
                 {
                     UserName = identityUser.UserName,
-                    Roles = new List<TrafficRole>()
+                    Roles = new List<Role>()
                 };
                 IList<string> roleNames = await _userManager.GetRolesAsync(identityUser);
                 foreach (string roleName in roleNames)
                 {
                     IdentityRole identityRole = await _roleManager.FindByNameAsync(roleName);
-                    IList<Claim> roleClaims = await _roleManager.GetClaimsAsync(identityRole);
-                    userRoleRoles.Roles.Add(new TrafficRole { Name = roleName, Claims = roleClaims.Select(c => new TrafficClaim { Type = c.Type, Value = c.Value }).ToList() });
+                    IList<System.Security.Claims.Claim> roleClaims = await _roleManager.GetClaimsAsync(identityRole);
+                    userRoleRoles.Roles.Add(new Role { Name = roleName, Claims = roleClaims.Select(c => new Claim { Type = c.Type, Value = c.Value }).ToList() });
                 }
                 users.Add(userRoleRoles);
             }
@@ -91,13 +90,13 @@ namespace YumekoJabami.Controllers
             UserRole userRoleRoles = new UserRole
             {
                 UserName = userName,
-                Roles = new List<TrafficRole>()
+                Roles = new List<Role>()
             };
             foreach (string roleName in roleNames)
             {
                 IdentityRole role = await _roleManager.FindByNameAsync(roleName);
-                IList<Claim> roleClaims = await _roleManager.GetClaimsAsync(role);
-                userRoleRoles.Roles.Add(new TrafficRole { Name = roleName, Claims = roleClaims.Select(c => new TrafficClaim { Type = c.Type, Value = c.Value }).ToList() });
+                IList<System.Security.Claims.Claim> roleClaims = await _roleManager.GetClaimsAsync(role);
+                userRoleRoles.Roles.Add(new Role { Name = roleName, Claims = roleClaims.Select(c => new Claim { Type = c.Type, Value = c.Value }).ToList() });
             }
             return Ok(userRoleRoles);
         }
@@ -170,7 +169,7 @@ namespace YumekoJabami.Controllers
 
             IList<string> roleNames = await _userManager.GetRolesAsync(identityUser);
 
-            foreach (TrafficRole role in userRoleRoles.Roles)
+            foreach (Role role in userRoleRoles.Roles)
             {
                 if (!roleNames.Contains(role.Name))
                 {

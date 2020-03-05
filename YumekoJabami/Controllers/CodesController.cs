@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using YumekoJabami.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using YumekoJabami.Codes;
 using YumekoJabami.Data;
 
 namespace YumekoJabami.Controllers
@@ -36,64 +35,49 @@ namespace YumekoJabami.Controllers
         /// </summary>
         /// <returns>查询结果</returns>
         [HttpGet]
-        public IEnumerable<TrafficCode> GetCodes()
+        public IEnumerable<Code> GetCodes()
         {
             return _context.Codes;
         }
 
         /// <summary>
-        /// 按系统查询字典集合
-        /// </summary>
-        /// <param name="system">系统编号</param>
-        /// <returns>查询结果</returns>
-        [HttpGet("systems/{system}")]
-        public IEnumerable<TrafficCode> GetCodes([FromRoute] SystemType system)
-        {
-            return _context.Codes
-                .Where(c => c.System == system);
-        }
-
-        /// <summary>
         /// 按系统查询字典键集合
         /// </summary>
-        /// <param name="system">系统编号</param>
         /// <returns>查询结果</returns>
-        [HttpGet("systems/{system}/keys")]
-        public IEnumerable<TrafficCode> GetCodeKeys([FromRoute] SystemType system)
+        [HttpGet("keys")]
+        public IEnumerable<Code> GetCodeKeys()
         {
 
             return _context.Codes
-                .Where(c => c.System == system)
                 .Select(c => c.Key)
                 //这里如果不加ToList,在筛选重复的时候会忽略大小写
                 .ToList()
                 .Distinct()
-                .Select(k=>new TrafficCode{Key=k});
+                .Select(k=>new Code{Key=k});
         }
 
         /// <summary>
         /// 按系统和键查询字典集合
         /// </summary>
-        /// <param name="system">系统编号</param>
         /// <param name="key">字典键</param>
         /// <returns>查询结果</returns>
-        [HttpGet("systems/{system}/keys/{key}")]
-        public IEnumerable<TrafficCode> GetCodes([FromRoute] SystemType system, [FromRoute] string key)
+        [HttpGet("keys/{key}")]
+        public IEnumerable<Code> GetCodes([FromRoute] string key)
         {
             return _context.Codes
-                .Where(c => c.System == system && c.Key == key)
+                .Where(c => c.Key == key)
                 .OrderBy(c=>c.Value);
         }
 
         /// <summary>
         /// 添加字典
         /// </summary>
-        /// <param name="trafficCode">字典</param>
+        /// <param name="code">字典</param>
         /// <returns>添加结果</returns>
         [HttpPost]
-        public async Task<IActionResult> PostCode([FromBody] TrafficCode trafficCode)
+        public async Task<IActionResult> PostCode([FromBody] Code code)
         {
-            _context.Codes.Add(trafficCode);
+            _context.Codes.Add(code);
 
             try
             {
@@ -102,7 +86,7 @@ namespace YumekoJabami.Controllers
 
             catch (DbUpdateException)
             {
-                if (_context.Codes.Count(c => c.System == trafficCode.System && c.Key == trafficCode.Key && c.Value == trafficCode.Value)>0)
+                if (_context.Codes.Count(c => c.Key == code.Key && c.Value == code.Value)>0)
                 {
                     return Conflict();
                 }
@@ -111,18 +95,18 @@ namespace YumekoJabami.Controllers
                     throw;
                 }
             }
-            return Ok(trafficCode);
+            return Ok(code);
         }
 
         /// <summary>
         /// 更新字典
         /// </summary>
-        /// <param name="trafficCode">字典</param>
+        /// <param name="code">字典</param>
         /// <returns>更新结果</returns>
         [HttpPut]
-        public async Task<IActionResult> PutCode([FromBody] TrafficCode trafficCode)
+        public async Task<IActionResult> PutCode([FromBody] Code code)
         {
-            _context.Entry(trafficCode).State = EntityState.Modified;
+            _context.Entry(code).State = EntityState.Modified;
 
             try
             {
@@ -130,7 +114,7 @@ namespace YumekoJabami.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (_context.Codes.Count(c => c.System == trafficCode.System && c.Key == trafficCode.Key && c.Value == trafficCode.Value) ==0)
+                if (_context.Codes.Count(c => c.Key == code.Key && c.Value == code.Value) ==0)
                 {
                     return NotFound();
                 }
@@ -145,14 +129,13 @@ namespace YumekoJabami.Controllers
         /// <summary>
         /// 删除字典
         /// </summary>
-        /// <param name="system">系统编号</param>
         /// <param name="key">字典键</param>
         /// <param name="value">字典值</param>
         /// <returns>删除结果</returns>
-        [HttpDelete("systems/{system}/keys/{key}/values/{value}")]
-        public async Task<IActionResult> DeleteCode([FromRoute] SystemType system, [FromRoute]string key, [FromRoute]int value)
+        [HttpDelete("keys/{key}/values/{value}")]
+        public async Task<IActionResult> DeleteCode([FromRoute]string key, [FromRoute]int value)
         {
-            var code = await _context.Codes.SingleOrDefaultAsync(c => c.System == system && c.Key == key && c.Value == value);
+            var code = await _context.Codes.SingleOrDefaultAsync(c => c.Key == key && c.Value == value);
             if (code == null)
             {
                 return NotFound();

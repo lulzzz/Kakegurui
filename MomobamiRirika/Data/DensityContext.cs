@@ -1,30 +1,36 @@
 ﻿using System;
 using System.Linq;
+using ItsukiSumeragi.Models;
 using Kakegurui.Core;
 using Microsoft.EntityFrameworkCore;
 using MomobamiRirika.Models;
-using YumekoJabami.Models;
+using YumekoJabami.Data;
 
 namespace MomobamiRirika.Data
 {
     /// <summary>
     /// 交通密度数据库
     /// </summary>
-    public class DensityContext : DbContext
+    public class DensityContext : SystemContext
     {
         private const string DensityOneTable = "Density_One";
         private const string DensityFiveTable = "Density_Five";
         private const string DensityFifteenTable = "Density_Fifteen";
         private const string DensityHourTable = "Density_Hour";
 
+        public DbSet<DensityDevice> Devices { get; set; }
+        public DbSet<DensityDevice_DensityChannel> Device_Channels { get; set; }
+        public DbSet<DensityChannel> Channels { get; set; }
+        public DbSet<TrafficRegion> Regions { get; set; }
+        public DbSet<RoadCrossing> RoadCrossings { get; set; }
+        public DbSet<TrafficVersion> Version { get; set; }
+
         public DbSet<TrafficDensity_One> Densities_One { get; set; }
         public DbSet<TrafficDensity_Five> Densities_Five { get; set; }
         public DbSet<TrafficDensity_Fifteen> Densities_Fifteen { get; set; }
         public DbSet<TrafficDensity_Hour> Densities_hour { get; set; }
-
         public DbSet<TrafficEvent> Events { get; set; }
 
-        public DbSet<TrafficVersion> Version { get; set; }
         public DensityContext(DbContextOptions<DensityContext> options)
             : base(options)
         {
@@ -33,6 +39,8 @@ namespace MomobamiRirika.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<TrafficDensity_One>()
                 .ToTable(DensityOneTable)
                 .HasKey(d => d.Id);
@@ -62,6 +70,43 @@ namespace MomobamiRirika.Data
                 .HasKey(d => d.Id);
             modelBuilder.Entity<TrafficEvent>()
                 .HasIndex(f => new { f.DataId, f.DateTime });
+
+            modelBuilder.Entity<DensityDevice>()
+                .ToTable("Density_Device")
+                .HasKey(d => d.DeviceId);
+            modelBuilder.Entity<DensityDevice>()
+                .HasIndex(d => d.Ip)
+                .IsUnique();
+            modelBuilder.Entity<DensityDevice>()
+                .HasMany(d => d.DensityDevice_DensityChannels)
+                .WithOne(r => r.Device);
+
+            modelBuilder.Entity<DensityDevice_DensityChannel>()
+                .ToTable("Density_Device_Channel")
+                .HasKey(r => new { r.DeviceId, r.ChannelId })
+                .HasName("PK_Device_Channel");
+            modelBuilder.Entity<DensityDevice_DensityChannel>()
+                .HasOne(r => r.Channel)
+                .WithOne(c => c.DensityDevice_DensityChannel)
+                .HasConstraintName("FK_Device_Channel");
+
+            modelBuilder.Entity<DensityChannel>()
+                .ToTable("Density_Channel")
+                .HasKey(c => c.ChannelId);
+            modelBuilder.Entity<DensityChannel>()
+                .HasMany(c => c.Regions)
+                .WithOne(r => r.Channel);
+            modelBuilder.Entity<DensityChannel>()
+                .HasOne(c => c.RoadCrossing)
+                .WithMany(c => c.Channels);
+
+            modelBuilder.Entity<RoadCrossing>()
+                .ToTable("Density_RoadCrossing")
+                .HasKey(r => r.CrossingId);
+
+            modelBuilder.Entity<TrafficRegion>()
+                .ToTable("Density_Region")
+                .HasKey(r => new { r.ChannelId, r.RegionIndex });
 
             modelBuilder.Entity<TrafficVersion>()
                 .ToTable("Density_Version")

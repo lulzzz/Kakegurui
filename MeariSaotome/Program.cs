@@ -1,19 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi;
 using Kakegurui.Log;
-using Kakegurui.WebExtensions;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using MomobamiKirari;
 using MomobamiRirika;
-using NishinotouinYuriko;
-using SayakaIgarashi;
-using YumekoJabami.Codes;
-using YumekoJabami.Controllers;
+using YumekoJabami;
 
 namespace MeariSaotome
 {
@@ -23,12 +18,21 @@ namespace MeariSaotome
     public class Program
     {
         /// <summary>
+        /// 系统编号
+        /// </summary>
+        internal enum SystemType
+        {
+            User=1,
+            Flow=2,
+            Density=3
+        }
+
+        /// <summary>
         /// 主函数
         /// </summary>
         /// <param name="args">配置参数</param>
         public static void Main(string[] args)
         {
-
             //未捕获异常处理
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionEventHandler;
             
@@ -36,43 +40,19 @@ namespace MeariSaotome
             IConfigurationRoot commandConfig =new ConfigurationBuilder()
                 .AddCommandLine(args)
                 .Build();
-            int system = commandConfig.GetValue<int>("System");
-            string systemUrl = commandConfig.GetValue<string>("SystemUrl");
-            string parameterType = commandConfig.GetValue("ParameterType", ParametersController.DefaultType);
-            int listenPort = commandConfig.GetValue<int>("ListenPort");
-            
+             SystemType system = commandConfig.GetValue<SystemType>("System");
+             int listenPort = commandConfig.GetValue<int>("ListenPort");
+
             //初始化日志
-            string logName = null;
-            if (system == (int)SystemType.系统管理中心)
-            {
-                logName = "System";
-            }
-            else if (system == (int)SystemType.智慧交通视频检测系统)
-            {
-                logName = "Flow";
-            }
-            else if (system == (int)SystemType.智慧高点视频检测系统)
-            {
-                logName = "Density";
-            }
-            else if (system == (int)SystemType.智慧交通违法检测系统)
-            {
-                logName = "Violation";
-            }
-            else if (system == 5)
-            {
-                logName = "Data";
-            }
             List<string> tempArgs = args.ToList();
-            tempArgs.Add($"LogName={logName}");
+            tempArgs.Add($"LogName={system}");
             args = tempArgs.ToArray();
             List<ILoggerProvider> loggerProviders = new List<ILoggerProvider>
             {
                 new ConsoleLogger(LogLevel.Debug,LogLevel.Error),
-                new FileLogger(LogLevel.Debug,LogLevel.Error,logName, LogPool.Directory, LogPool.HoldDays)
+                new FileLogger(LogLevel.Debug,LogLevel.Error,system.ToString(), LogPool.Directory, LogPool.HoldDays)
             };
             LogPool.SetLoggerProviders(loggerProviders);
-            LogPool.Logger.LogInformation("123");
             //添加日志和监听端口
             IWebHostBuilder builder = WebHost.CreateDefaultBuilder(args)
                 .ConfigureLogging((hostingContext, logging) =>
@@ -83,43 +63,32 @@ namespace MeariSaotome
                         logging.AddProvider(loggerProvider);
                     }
                 })
-                .UseUrls($"http://+:{listenPort}/"); 
-  
-            //http配置项
-            if (system!=(int)SystemType.系统管理中心&&systemUrl != null)
-            {
-                builder.ConfigureAppConfiguration((hostingContext, config) =>
-                {
-                    config.AddHttpConfiguration(systemUrl, parameterType);
-                });
-            }
+                .UseUrls($"http://+:{listenPort}/");
 
-            //配置启动类
-            if (system == (int)SystemType.系统管理中心)
-            {
-                builder.UseStartup<SystemStartup>();
-            }
-            else if (system == (int)SystemType.智慧交通视频检测系统)
+            //http配置项
+            //if (system!=(int)SystemType.系统管理中心&&systemUrl != null)
+            //{
+            //    builder.ConfigureAppConfiguration((hostingContext, config) =>
+            //    {
+            //        config.AddHttpConfiguration(systemUrl, parameterType);
+            //    });
+            //}
+
+            if (system == SystemType.Flow)
             {
                 builder.UseStartup<FlowStartup>();
             }
-            else if (system == (int)SystemType.智慧高点视频检测系统)
+            else if (system == SystemType.Density)
             {
                 builder.UseStartup<DensityStartup>();
             }
-            else if (system == (int)SystemType.智慧交通违法检测系统)
+            else
             {
-                builder.UseStartup<ViolationStartup>();
-            }
-            else if (system == 5)
-            {
-                builder.UseStartup<DataStartup>();
+                builder.UseStartup<SystemStartup>();
             }
 
             IWebHost webHost = builder.Build();
             LogPool.Logger.LogInformation((int)LogEvent.配置项, $"System {system}");
-            LogPool.Logger.LogInformation((int)LogEvent.配置项, $"SystemUrl {systemUrl}");
-            LogPool.Logger.LogInformation((int)LogEvent.配置项, $"ParameterType {parameterType}");
             LogPool.Logger.LogInformation((int)LogEvent.配置项, $"ListenPort {listenPort}");
             webHost.Run();
         }

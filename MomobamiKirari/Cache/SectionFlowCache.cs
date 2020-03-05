@@ -1,11 +1,9 @@
 ﻿using System;
-using ItsukiSumeragi.Cache;
-using ItsukiSumeragi.Models;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using MomobamiKirari.Codes;
 using MomobamiKirari.Models;
 using Newtonsoft.Json;
-using ItsukiSumeragi.Codes.Flow;
 
 namespace MomobamiKirari.Cache
 {
@@ -24,7 +22,7 @@ namespace MomobamiKirari.Cache
         {
             if (sectionFlow != null)
             {
-                TrafficRoadSection section = memoryCache.GetSection(sectionFlow.SectionId);
+                RoadSection section = memoryCache.GetSection(sectionFlow.SectionId);
                 if (section != null)
                 {
                     sectionFlow.SectionName = section.SectionName;

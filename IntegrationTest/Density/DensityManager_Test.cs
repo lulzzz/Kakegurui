@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ItsukiSumeragi.Data;
 using ItsukiSumeragi.Models;
 using Kakegurui.Core;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MomobamiRirika.Controllers;
 using MomobamiRirika.Data;
+using MomobamiRirika.Managers;
 using MomobamiRirika.Models;
 
 namespace IntegrationTest.Density
@@ -23,41 +21,39 @@ namespace IntegrationTest.Density
             DateTime endDate = new DateTime(2019,5,11);
             int days = Convert.ToInt32((endDate - startDate).TotalDays+1);
             int months = startDate.Month == endDate.Month ? 1 : 2;
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 2, "127.0.0.1", true);
+            List<DensityDevice> devices = DensityDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 2, "127.0.0.1", true);
             DensityDbSimulator.CreateData(TestInit.ServiceProvider, devices, DataCreateMode.Sequence, startDate, endDate, true);
-            DensitiesController controller = new DensitiesController(
-                TestInit.ServiceProvider.GetRequiredService<DensityContext>(),
-                TestInit.ServiceProvider.GetRequiredService<IMemoryCache>());
+            DensitiesManager manager = TestInit.ServiceProvider.GetRequiredService<DensitiesManager>();
             int average = 720;
-            foreach (TrafficDevice device in devices)
+            foreach (DensityDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.DensityDevice_DensityChannels)
                 {
                     foreach (TrafficRegion region in relation.Channel.Regions)
                     {
-                        var oneMinuteList = controller.QueryList(region.DataId, DateTimeLevel.Minute, startDate, endDate.AddDays(1).AddMinutes(-1));
+                        var oneMinuteList = manager.QueryList(region.DataId, DateTimeLevel.Minute, startDate, endDate.AddDays(1).AddMinutes(-1));
                         //验证查询数量
                         Assert.AreEqual(24 * 60 * days, oneMinuteList.Count);
                         //验证平均密度
                         Assert.AreEqual(average, Convert.ToInt32(oneMinuteList.Average(d => d.Value)));
 
-                        var fiveMinuteList = controller.QueryList(region.DataId, DateTimeLevel.FiveMinutes, startDate, endDate.AddDays(1).AddMinutes(-5));
+                        var fiveMinuteList = manager.QueryList(region.DataId, DateTimeLevel.FiveMinutes, startDate, endDate.AddDays(1).AddMinutes(-5));
                         Assert.AreEqual(24 * 60 / 5 * days, fiveMinuteList.Count);
                         Assert.AreEqual(average, Convert.ToInt32(fiveMinuteList.Average(d => d.Value)));
 
-                        var fifteenMinuteList = controller.QueryList(region.DataId, DateTimeLevel.FifteenMinutes, startDate, endDate.AddDays(1).AddMinutes(-15));
+                        var fifteenMinuteList = manager.QueryList(region.DataId, DateTimeLevel.FifteenMinutes, startDate, endDate.AddDays(1).AddMinutes(-15));
                         Assert.AreEqual(24 * 60 / 15 * days, fifteenMinuteList.Count);
                         Assert.AreEqual(average, Convert.ToInt32(fifteenMinuteList.Average(d => d.Value)));
 
-                        var sixtyMinuteList = controller.QueryList(region.DataId, DateTimeLevel.Hour, startDate, endDate.AddDays(1).AddHours(-1));
+                        var sixtyMinuteList = manager.QueryList(region.DataId, DateTimeLevel.Hour, startDate, endDate.AddDays(1).AddHours(-1));
                         Assert.AreEqual(24 * days, sixtyMinuteList.Count);
                         Assert.AreEqual(average, Convert.ToInt32(sixtyMinuteList.Average(d => d.Value)));
 
-                        var dayList = controller.QueryList(region.DataId, DateTimeLevel.Day, startDate, endDate);
+                        var dayList = manager.QueryList(region.DataId, DateTimeLevel.Day, startDate, endDate);
                         Assert.AreEqual(days, dayList.Count);
                         Assert.AreEqual(average, Convert.ToInt32(dayList.Average(d => d.Value)));
 
-                        var monthList = controller.QueryList(region.DataId, DateTimeLevel.Month, TimePointConvert.CurrentTimePoint(DateTimeLevel.Month,startDate), TimePointConvert.CurrentTimePoint(DateTimeLevel.Month, endDate));
+                        var monthList = manager.QueryList(region.DataId, DateTimeLevel.Month, TimePointConvert.CurrentTimePoint(DateTimeLevel.Month,startDate), TimePointConvert.CurrentTimePoint(DateTimeLevel.Month, endDate));
                         Assert.AreEqual(months, monthList.Count);
                         Assert.AreEqual(average, Convert.ToInt32(monthList.Average(d => d.Value)));
                     }
@@ -70,7 +66,7 @@ namespace IntegrationTest.Density
         {
             //创建某天的模拟数据
             DateTime startDate = new DateTime(2019,7,1);
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 2, "", true);
+            List<DensityDevice> devices = DensityDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 2, "", true);
             List<DateTime> dates = new List<DateTime>
             {
                 startDate.AddYears(-1),
@@ -79,17 +75,15 @@ namespace IntegrationTest.Density
                 startDate
             };
             DensityDbSimulator.CreateData(TestInit.ServiceProvider, devices, DataCreateMode.Sequence, dates, true);
-            DensitiesController controller = new DensitiesController(
-                TestInit.ServiceProvider.GetRequiredService<DensityContext>(),
-                TestInit.ServiceProvider.GetRequiredService<IMemoryCache>());
-            foreach (TrafficDevice device in devices)
+            DensitiesManager manager = TestInit.ServiceProvider.GetRequiredService<DensitiesManager>();
+            foreach (DensityDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.DensityDevice_DensityChannels)
                 {
                     foreach (TrafficRegion region in relation.Channel.Regions)
                     {
                         //验证5分钟
-                        var fiveCharts = controller.QueryComparison(region.DataId, DateTimeLevel.FiveMinutes, startDate, startDate.AddDays(1).AddMinutes(-5));
+                        var fiveCharts = manager.QueryComparison(region.DataId, DateTimeLevel.FiveMinutes, startDate, startDate.AddDays(1).AddMinutes(-5));
                         for(int i=0;i<fiveCharts.Count;++i)
                         {
                             fiveCharts[i] = fiveCharts[i].OrderBy(c => c.Axis).ToList();
@@ -109,7 +103,7 @@ namespace IntegrationTest.Density
                             Assert.AreEqual(24 * 60 / 5, charts.Count);
                         }
 
-                        var fifteenCharts = controller.QueryComparison(region.DataId, DateTimeLevel.FifteenMinutes, startDate, startDate.AddDays(1).AddMinutes(-15));
+                        var fifteenCharts = manager.QueryComparison(region.DataId, DateTimeLevel.FifteenMinutes, startDate, startDate.AddDays(1).AddMinutes(-15));
                         for (int i = 0; i < fifteenCharts.Count; ++i)
                         {
                             fifteenCharts[i] = fifteenCharts[i].OrderBy(c => c.Axis).ToList();
@@ -127,7 +121,7 @@ namespace IntegrationTest.Density
                             Assert.AreEqual(24 * 60 / 15, charts.Count);
                         }
 
-                        var hourCharts = controller.QueryComparison(region.DataId, DateTimeLevel.Hour, startDate, startDate.AddDays(1).AddHours(-1));
+                        var hourCharts = manager.QueryComparison(region.DataId, DateTimeLevel.Hour, startDate, startDate.AddDays(1).AddHours(-1));
                         for (int i = 0; i < hourCharts.Count; ++i)
                         {
                             hourCharts[i] = hourCharts[i].OrderBy(c => c.Axis).ToList();
@@ -145,7 +139,7 @@ namespace IntegrationTest.Density
                             Assert.AreEqual(24, charts.Count);
                         }
 
-                        var dayCharts = controller.QueryComparison(region.DataId, DateTimeLevel.Day, startDate, startDate);
+                        var dayCharts = manager.QueryComparison(region.DataId, DateTimeLevel.Day, startDate, startDate);
                                   
                         for (int i = 0; i < dayCharts.Count; ++i)
                         {
@@ -164,7 +158,7 @@ namespace IntegrationTest.Density
                             Assert.AreEqual(1, charts.Count);
                         }
 
-                        var monthCharts = controller.QueryComparison(region.DataId, DateTimeLevel.Month,TimePointConvert.CurrentTimePoint(DateTimeLevel.Month,startDate), TimePointConvert.CurrentTimePoint(DateTimeLevel.Month, startDate));
+                        var monthCharts = manager.QueryComparison(region.DataId, DateTimeLevel.Month,TimePointConvert.CurrentTimePoint(DateTimeLevel.Month,startDate), TimePointConvert.CurrentTimePoint(DateTimeLevel.Month, startDate));
                         for (int i = 0; i < monthCharts.Count; ++i)
                         {
                             monthCharts[i] = monthCharts[i].OrderBy(c => c.Axis).ToList();
@@ -193,12 +187,10 @@ namespace IntegrationTest.Density
             DateTime now = DateTime.Now;
             DateTime today = now.Date;
             
-            List<TrafficDevice> devices = DeviceDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 12, "", true);
+            List<DensityDevice> devices = DensityDbSimulator.CreateDensityDevice(TestInit.ServiceProvider, 1, 1, 12, "", true);
             DensityDbSimulator.ResetDatabase(TestInit.ServiceProvider);
             TestInit.RefreshDensityCache(devices);
-            DensitiesController controller = new DensitiesController(
-                TestInit.ServiceProvider.GetRequiredService<DensityContext>(),
-                TestInit.ServiceProvider.GetRequiredService<IMemoryCache>());
+            DensitiesManager manager = TestInit.ServiceProvider.GetRequiredService<DensitiesManager>();
 
             var regions = DensityDbSimulator.CreateData(TestInit.ServiceProvider,devices
                 ,new List<DataCreateMode>{DataCreateMode.Fixed,DataCreateMode.Fixed,DataCreateMode.Random}
@@ -208,15 +200,16 @@ namespace IntegrationTest.Density
 
             var densities = regions.OrderByDescending(p => p.Value).ToList();
     
-            var dayTop10 = controller.QueryDayTop10();
+            var dayTop10 = manager.QueryTop10(today);
             for (int i = 0; i < dayTop10.Count; ++i)
             {
                 Assert.AreEqual(densities[i].Key.DataId,dayTop10[i].DataId);
                 //今天
                 Assert.AreEqual(Math.Ceiling((densities[i].Value + 1) / 2.0), dayTop10[i].Value);
             }
-
-            var hourTop10 = controller.QueryHourTop10();
+            DateTime time = DateTime.Now.AddHours(-1);
+     
+            var hourTop10 = manager.QueryTop10(time);
             for (int i = 0; i < hourTop10.Count; ++i)
             {
                 Assert.AreEqual(densities[i].Key.DataId, hourTop10[i].DataId);
@@ -224,7 +217,7 @@ namespace IntegrationTest.Density
                 Assert.AreEqual(densities[i].Value, hourTop10[i].Value);
             }
 
-            var dayChangeTop10 = controller.QueryChangeDayTop10();
+            var dayChangeTop10 = manager.QueryChangeTop10(today, today.AddDays(-1), today.AddDays(-1).Add(now.TimeOfDay));
             for (int i = 0; i < dayChangeTop10.Count; ++i)
             {
                 Assert.AreEqual(densities[i].Key.DataId, dayChangeTop10[i].DataId);
@@ -234,7 +227,7 @@ namespace IntegrationTest.Density
                 Assert.AreEqual(1, dayChangeTop10[i].LastValue);
             }
 
-            var hourChangeTop10 = controller.QueryChangeHourTop10();
+            var hourChangeTop10 = manager.QueryChangeTop10(now.AddHours(-1), now.AddHours(-2), now.AddHours(-1));
             for (int i = 0; i < hourChangeTop10.Count; ++i)
             {
                 Assert.AreEqual(densities[i].Key.DataId, hourChangeTop10[i].DataId);
@@ -248,7 +241,7 @@ namespace IntegrationTest.Density
         [TestMethod]
         public void QueryVipRegions()
         {
-            List<TrafficDevice> devices = new List<TrafficDevice>();
+            List<DensityDevice> devices = new List<DensityDevice>();
             int deviceCount = 1;
             int channelCount = 1;
             int regionCount = 12;
@@ -257,52 +250,43 @@ namespace IntegrationTest.Density
             Random random = new Random();
             using (IServiceScope serviceScope = TestInit.ServiceProvider.CreateScope())
             {
-                using (DeviceContext context = serviceScope.ServiceProvider.GetRequiredService<DeviceContext>())
+                using (DensityContext context = serviceScope.ServiceProvider.GetRequiredService<DensityContext>())
                 {
                     context.Database.EnsureDeleted();
                     context.Database.EnsureCreated();
 
                     int deviceId = 1;
                     int crossingId = 1;
-                    int sectionId = 1;
                     int regionId = 1;
                     int channelId = 1;
                     for (int i = 0; i < deviceCount; ++i)
                     {
-                        TrafficDevice densityDevice = new TrafficDevice
+                        DensityDevice densityDevice = new DensityDevice
                         {
                             DeviceId = deviceId++,
                             Ip = "192.168.200.204",
                             Port = 18000 + i
                         };
                         densityDevice.DeviceName = "设备" + densityDevice.Port;
-                        densityDevice.Device_Channels = new List<TrafficDevice_TrafficChannel>();
+                        densityDevice.DensityDevice_DensityChannels = new List<DensityDevice_DensityChannel>();
                         for (int j = 0; j < channelCount; ++j)
                         {
-                            TrafficRoadCrossing roadCrossing = new TrafficRoadCrossing
+                            RoadCrossing roadCrossing = new RoadCrossing
                             {
                                 CrossingId = crossingId,
                                 CrossingName = "路口" + crossingId
                             };
-                            TrafficRoadSection roadSection = new TrafficRoadSection
-                            {
-                                SectionId = sectionId,
-                                SectionName = "路段" + sectionId
-                            };
-
-                            TrafficChannel channel = new TrafficChannel()
+                            DensityChannel channel = new DensityChannel()
                             {
                                 ChannelId = channelId.ToString(),
                                 ChannelName = $"通道 {densityDevice.DeviceId} {j+1}",
                                 ChannelIndex = j + 1,
                                 CrossingId = crossingId,
-                                SectionId = sectionId,
                                 Regions = new List<TrafficRegion>(),
-                                RoadCrossing = roadCrossing,
-                                RoadSection = roadSection,
+                                RoadCrossing = roadCrossing
 
                             };
-                            TrafficDevice_TrafficChannel relation = new TrafficDevice_TrafficChannel
+                            DensityDevice_DensityChannel relation = new DensityDevice_DensityChannel
                             {
                                 ChannelId = channel.ChannelId,
                                 DeviceId = densityDevice.DeviceId,
@@ -310,8 +294,7 @@ namespace IntegrationTest.Density
                             };
                             channelId++;
                             crossingId++;
-                            sectionId++;
-                            densityDevice.Device_Channels.Add(relation);
+                            densityDevice.DensityDevice_DensityChannels.Add(relation);
 
                             for (int k = 0; k < regionCount; ++k)
                             {
@@ -339,10 +322,9 @@ namespace IntegrationTest.Density
                 }
                 DensityDbSimulator.CreateData(TestInit.ServiceProvider, devices, DataCreateMode.Fixed, DateTime.Today, DateTime.Today);
                 TestInit.RefreshDensityCache(devices);
-                DensitiesController controller = new DensitiesController(
-                    TestInit.ServiceProvider.GetRequiredService<DensityContext>(),
-                    TestInit.ServiceProvider.GetRequiredService<IMemoryCache>());
-                var v = controller.QueryVipRegions();
+                DensitiesManager manager = TestInit.ServiceProvider.GetRequiredService<DensitiesManager>();
+
+                var v = manager.QueryVipRegions();
                 foreach (TrafficDensity density in v)
                 {
                     Assert.IsTrue(vips.Contains(density.DataId));

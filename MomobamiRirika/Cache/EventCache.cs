@@ -1,7 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using ItsukiSumeragi.Cache;
-using ItsukiSumeragi.Models;
 using Microsoft.Extensions.Caching.Memory;
 using MomobamiRirika.Models;
 

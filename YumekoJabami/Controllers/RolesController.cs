@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using YumekoJabami.Data;
 using YumekoJabami.Models;
+using Claim = YumekoJabami.Models.Claim;
 
 namespace YumekoJabami.Controllers
 {
@@ -46,18 +46,18 @@ namespace YumekoJabami.Controllers
         public async Task<IActionResult> GetRoles()
         {
             List<IdentityRole> identityRoles= _roleManager.Roles.ToList();
-            List<TrafficRole> roles = new List<TrafficRole>();
+            List<Role> roles = new List<Role>();
             foreach (IdentityRole identityRole in identityRoles)
             {
-                IList<Claim> claims = await _roleManager.GetClaimsAsync(identityRole);
-                TrafficRole trafficRole = new TrafficRole
+                IList<System.Security.Claims.Claim> claims = await _roleManager.GetClaimsAsync(identityRole);
+                Role role = new Role
                 {
                     Name = identityRole.Name,
                     Claims = claims
-                        .Select(c => new TrafficClaim { Type = c.Type, Value = c.Value })
+                        .Select(c => new Claim { Type = c.Type, Value = c.Value })
                         .ToList()
                 };
-                roles.Add(trafficRole);
+                roles.Add(role);
             }
             return Ok(roles);
         }
@@ -75,12 +75,12 @@ namespace YumekoJabami.Controllers
             {
                 return NotFound();
             }
-            IList<Claim> claims = await _roleManager.GetClaimsAsync(identityRole);
-            return Ok(new TrafficRole
+            IList<System.Security.Claims.Claim> claims = await _roleManager.GetClaimsAsync(identityRole);
+            return Ok(new Role
             {
                 Name = identityRole.Name,
                 Claims = claims
-                    .Select(c => new TrafficClaim {Type = c.Type, Value = c.Value})
+                    .Select(c => new Claim {Type = c.Type, Value = c.Value})
                     .ToList()
             });
         }
@@ -88,15 +88,15 @@ namespace YumekoJabami.Controllers
         /// <summary>
         /// 添加角色
         /// </summary>
-        /// <param name="trafficRole">角色</param>
+        /// <param name="role">角色</param>
         /// <returns>添加结果</returns>
         [HttpPost]
-        public async Task<IActionResult> PostRole([FromBody] TrafficRole trafficRole)
+        public async Task<IActionResult> PostRole([FromBody] Role role)
         {
-            IdentityResult result = await _roleManager.CreateAsync(new IdentityRole{Name = trafficRole.Name});
+            IdentityResult result = await _roleManager.CreateAsync(new IdentityRole{Name = role.Name});
             if (result.Succeeded)
             {
-                return Ok(trafficRole);
+                return Ok(role);
             }
             else
             {
@@ -114,30 +114,30 @@ namespace YumekoJabami.Controllers
         /// <summary>
         /// 更新角色权限
         /// </summary>
-        /// <param name="trafficRole">角色权限</param>
+        /// <param name="role">角色权限</param>
         /// <returns>更新结果</returns>
         [HttpPut("claims")]
-        public async Task<IActionResult> PutRoleClaims(TrafficRole trafficRole)
+        public async Task<IActionResult> PutRoleClaims(Role role)
         {
-            IdentityRole identityRole = await _roleManager.FindByNameAsync(trafficRole.Name);
+            IdentityRole identityRole = await _roleManager.FindByNameAsync(role.Name);
             if (identityRole == null)
             {
                 return NotFound();
             }
 
-            IList<Claim> claims = await _roleManager.GetClaimsAsync(identityRole);
+            IList<System.Security.Claims.Claim> claims = await _roleManager.GetClaimsAsync(identityRole);
 
-            foreach (TrafficClaim claim in trafficRole.Claims)
+            foreach (Claim claim in role.Claims)
             {
                 if (!claims.Any(c => c.Type == claim.Type && c.Value == claim.Value))
                 {
-                    await _roleManager.AddClaimAsync(identityRole, new Claim(claim.Type, claim.Value));
+                    await _roleManager.AddClaimAsync(identityRole, new System.Security.Claims.Claim(claim.Type, claim.Value));
                 }
             }
 
-            foreach (Claim claim in claims)
+            foreach (System.Security.Claims.Claim claim in claims)
             {
-                if (!trafficRole.Claims.Any(c => c.Type == claim.Type && c.Value == claim.Value))
+                if (!role.Claims.Any(c => c.Type == claim.Type && c.Value == claim.Value))
                 {
                     await _roleManager.RemoveClaimAsync(identityRole, claim);
                 }

@@ -5,16 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ItsukiSumeragi.Models;
 using Kakegurui.Core;
 using Kakegurui.Log;
 using Kakegurui.Net;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using MomobamiKirari.Codes;
 using MomobamiKirari.DataFlow;
 using MomobamiKirari.Models;
 using Newtonsoft.Json;
-using ItsukiSumeragi.Codes.Flow;
 
 namespace MomobamiKirari.Adapter
 {
@@ -234,7 +233,7 @@ namespace MomobamiKirari.Adapter
         /// </summary>
         /// <param name="device">设备</param>
         /// <returns>key</returns>
-        private string GetDeviceKey(TrafficDevice device)
+        private string GetDeviceKey(FlowDevice device)
         {
             return GetDeviceUrl(device, string.Empty).Authority;
         }
@@ -245,7 +244,7 @@ namespace MomobamiKirari.Adapter
         /// <param name="device">设备</param>
         /// <param name="url">相对路径</param>
         /// <returns>url</returns>
-        private Uri GetDeviceUrl(TrafficDevice device,string url)
+        private Uri GetDeviceUrl(FlowDevice device,string url)
         {
             return new Uri($"ws://{device.Ip}:{device.Port}/{url}");
         }
@@ -256,13 +255,13 @@ namespace MomobamiKirari.Adapter
         /// <param name="devices">设备集合</param>
         /// <param name="flowBranchBlock">流量数据分支</param>
         /// <param name="videoBranchBlock">视频结构化数据分支</param>
-        public void Start(List<TrafficDevice> devices, FlowBranchBlock flowBranchBlock,VideoBranchBlock videoBranchBlock)
+        public void Start(List<FlowDevice> devices, FlowBranchBlock flowBranchBlock,VideoBranchBlock videoBranchBlock)
         {
             _startTime = DateTime.Now;
 
             _flowBranchBlock = flowBranchBlock;
             _videoBranchBlock = videoBranchBlock;
-            foreach (TrafficDevice device in devices.Where(d => d.Device_Channels.Count > 0 && d.Device_Channels.Any(c => c.Channel.Lanes.Count > 0)))
+            foreach (FlowDevice device in devices.Where(d => d.FlowDevice_FlowChannels.Count > 0 && d.FlowDevice_FlowChannels.Any(c => c.Channel.Lanes.Count > 0)))
             {
                 WebSocketClientChannel flowWebsocket = new WebSocketClientChannel(GetDeviceUrl(device,FlowUrl));
                 flowWebsocket.WebSocketReceived += FlowReceivedHandler;
@@ -278,14 +277,14 @@ namespace MomobamiKirari.Adapter
         /// 重置设备集合
         /// </summary>
         /// <param name="devices">设备集合</param>
-        public void Reset(List<TrafficDevice> devices)
+        public void Reset(List<FlowDevice> devices)
         {
             _startTime = DateTime.Now;
 
             foreach (var client in _clients)
             {
                 bool exist = false;
-                foreach (TrafficDevice device in devices)
+                foreach (FlowDevice device in devices)
                 {
                     if (client.Key== GetDeviceKey(device))
                     {
@@ -301,7 +300,7 @@ namespace MomobamiKirari.Adapter
                 }
             }
 
-            foreach (TrafficDevice device in devices.Where(d => d.Device_Channels.Count > 0 && d.Device_Channels.Any(c => c.Channel.Lanes.Count > 0)))
+            foreach (FlowDevice device in devices.Where(d => d.FlowDevice_FlowChannels.Count > 0 && d.FlowDevice_FlowChannels.Any(c => c.Channel.Lanes.Count > 0)))
             {
                 bool exist = false;
                 foreach (var client in _clients)
@@ -369,77 +368,75 @@ namespace MomobamiKirari.Adapter
             return Task.FromResult(status == HealthStatus.Healthy ? HealthCheckResult.Healthy("数据源全部连接正常",data) : HealthCheckResult.Degraded("有连接异常的数据源",null, data));
         }
         #endregion
+
+        internal class VideoStructAdapterData
+        {
+            public int Id { get; set; }
+            public string ChannelId { get; set; }
+            public string LaneId { get; set; }
+            public long Timestamp { get; set; }
+            public DateTime DateTime => TimeStampConvert.ToLocalDateTime(Timestamp / 1000 * 1000);
+            public string Feature { get; set; }
+            public string Image { get; set; }
+            public int CountIndex { get; set; }
+            public VideoStructType VideoStructType { get; set; }
+            public int CarType { get; set; }
+            public string CarBrand { get; set; }
+            public int CarColor { get; set; }
+            public string PlateNumber { get; set; }
+            public int PlateType { get; set; }
+            public int BikeType { get; set; }
+            public int Sex { get; set; }
+            public int Age { get; set; }
+            public int UpperColor { get; set; }
+        }
+
+        internal class FlowAdapterData
+        {
+            public int Code { get; set; }
+            public LaneAdapterData[] Data { get; set; }
+            public LaneAdapterData[] Datas { get; set; }
+        }
+
+        internal class LaneAdapterData
+        {
+            public string ChannelId { get; set; }
+
+            public string LaneId { get; set; }
+
+            public long Timestamp { get; set; }
+
+            public DateTime DateTime => TimeStampConvert.ToLocalDateTime(Timestamp);
+
+            public int Cars { get; set; }
+
+            public int Buss { get; set; }
+
+            public int Trucks { get; set; }
+
+            public int Vans { get; set; }
+
+            public int Tricycles { get; set; }
+
+            public int Vehicle => Cars + Buss + Tricycles + Trucks + Vans;
+
+            public int Motorcycles { get; set; }
+
+            public int Bikes { get; set; }
+
+            public int Persons { get; set; }
+
+            public int AverageSpeed { get; set; }
+
+            public double HeadDistance { get; set; }
+
+            public double HeadSpace { get; set; }
+
+            public int TimeOccupancy { get; set; }
+
+            public int Occupancy { get; set; }
+
+            public TrafficStatus TrafficStatus { get; set; }
+        }
     }
-
-    public class VideoStructAdapterData
-    {
-       public int Id { get; set; }
-       public string ChannelId { get; set; }
-       public string LaneId { get; set; }
-       public long Timestamp { get; set; }
-       public DateTime DateTime => TimeStampConvert.ToLocalDateTime(Timestamp/1000*1000);
-       public string Feature { get; set; }
-       public string Image { get; set; }
-       public int CountIndex { get; set; }
-       public VideoStructType VideoStructType { get; set; }
-       public int CarType { get; set; }
-       public string CarBrand { get; set; }
-       public int CarColor { get; set; }
-       public string PlateNumber { get; set; }
-       public int PlateType { get; set; }
-       public int BikeType { get; set; }
-       public int Sex { get; set; }
-       public int Age { get; set; }
-       public int UpperColor { get; set; }
-    }
-
-    public class FlowAdapterData
-    {
-        public int Code { get; set; }
-        public LaneAdapterData[] Data { get; set; }
-        public LaneAdapterData[] Datas { get; set; }
-    }
-
-    public class LaneAdapterData
-    {
-        public string ChannelId { get; set; }
-
-        public string LaneId { get; set; }
-
-        public long Timestamp { get; set; }
-
-        public DateTime DateTime => TimeStampConvert.ToLocalDateTime(Timestamp);
-
-        public int Cars { get; set; }
-
-        public int Buss { get; set; }
-
-        public int Trucks { get; set; }
-
-        public int Vans { get; set; }
-
-        public int Tricycles { get; set; }
-
-        public int Vehicle => Cars + Buss + Tricycles + Trucks + Vans;
-
-        public int Motorcycles { get; set; }
-
-        public int Bikes { get; set; }
-
-        public int Persons { get; set; }
-
-        public int AverageSpeed { get; set; }
-
-        public double HeadDistance { get; set; }
-
-        public double HeadSpace { get; set; }
-
-        public int TimeOccupancy { get; set; }
-
-        public int Occupancy { get; set; }
-
-        public TrafficStatus TrafficStatus { get; set; }
-    }
-
- 
 }

@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using ItsukiSumeragi.Models;
 using Kakegurui.Core;
 using Microsoft.Extensions.DependencyInjection;
 using MomobamiKirari.Data;
 using MomobamiKirari.DataFlow;
 using MomobamiKirari.Models;
-using ItsukiSumeragi.Codes.Flow;
 using Kakegurui.Log;
 using Microsoft.Extensions.Logging;
+using MomobamiKirari.Codes;
 
 namespace IntegrationTest
 {
@@ -26,18 +25,132 @@ namespace IntegrationTest
             }
         }
 
-        public static Dictionary<string, List<LaneFlow>> CreateData(IServiceProvider serviceProvider, List<TrafficDevice> devices, List<DataCreateMode> modes, List<DateTime> startTimes, List<DateTime> endTimes, bool initDatabase = false)
+        public static List<FlowDevice> CreateFlowDevice(IServiceProvider serviceProvider, int deviceCount, int channelCount, int laneCount, bool initDatabase = false, string ip1 = "127.0.0.", int ip2 = 1, int id = 100)
+        {
+            List<FlowDevice> devices = new List<FlowDevice>();
+            using (FlowContext context = serviceProvider.CreateScope().ServiceProvider.GetRequiredService<FlowContext>())
+            {
+                if (initDatabase)
+                {
+                    ResetDatabase(serviceProvider);
+                }
+
+                for (int i = 0; i < deviceCount; ++i)
+                {
+                    FlowDevice device = new FlowDevice
+                    {
+                        DeviceId = id,
+                        DeviceName = $"流量测试设备_{id}",
+                        DeviceModel = (int)DeviceModel.MO_AF_A11_04_4X,
+                        Ip = $"{ip1}{ip2++}",
+                        Port = 17000,
+                        FlowDevice_FlowChannels = new List<FlowDevice_FlowChannel>()
+                    };
+                    for (int j = 0; j < channelCount; ++j)
+                    {
+                        RoadCrossing roadCrossing = new RoadCrossing
+                        {
+                            CrossingId = id,
+                            CrossingName = $"流量测试路口_{id}"
+                        };
+                        RoadSection roadSection = new RoadSection
+                        {
+                            SectionId = id,
+                            SectionName = $"流量测试通路段_{id}",
+                            SectionType = (int)SectionType.主干路,
+                            SpeedLimit = 10,
+                            Length = 10,
+                            Direction = (int)LaneDirection.由东向西
+                        };
+                        FlowChannel channel = new FlowChannel
+                        {
+                            ChannelId = $"channel_{id}",
+                            ChannelName = $"流量测试通道_{id}",
+                            ChannelIndex = j + 1,
+                            CrossingId = id,
+                            SectionId = id,
+                            ChannelType = (int)ChannelType.GB28181,
+                            Lanes = new List<Lane>(),
+                            RoadCrossing = roadCrossing,
+                            RoadSection = roadSection
+                        };
+
+                        FlowDevice_FlowChannel relation = new FlowDevice_FlowChannel
+                        {
+                            DeviceId = id,
+                            ChannelId = channel.ChannelId,
+                            Channel = channel
+                        };
+                        id++;
+                        device.FlowDevice_FlowChannels.Add(relation);
+                        for (int k = 0; k < laneCount; ++k)
+                        {
+                            LaneDirection direction;
+                            if (k >= 0 && k < 3)
+                            {
+                                direction = LaneDirection.由南向北;
+                            }
+                            else if (k >= 3 && k < 6)
+                            {
+                                direction = LaneDirection.由北向南;
+                            }
+                            else if (k >= 6 && k < 9)
+                            {
+                                direction = LaneDirection.由东向西;
+                            }
+                            else
+                            {
+                                direction = LaneDirection.由西向东;
+                            }
+
+                            FlowDirection flowDirection;
+                            if (k % 3 == 0)
+                            {
+                                flowDirection = FlowDirection.直行;
+                            }
+                            else if (k % 3 == 1)
+                            {
+                                flowDirection = FlowDirection.左转;
+                            }
+                            else
+                            {
+                                flowDirection = FlowDirection.右转;
+                            }
+                            channel.Lanes.Add(new Lane
+                            {
+                                ChannelId = channel.ChannelId,
+                                LaneId = $"{k + 1:D2}",
+                                LaneName = $"流量测试车道_{k + 1:D2}",
+                                Channel = channel,
+                                Direction = (int)direction,
+                                FlowDirection = (int)flowDirection,
+                                LaneIndex = k + 1,
+                                Region = "[]",
+                                Length = 10
+                            });
+                        }
+                    }
+                    context.Devices.Add(device);
+                    devices.Add(device);
+                    context.SaveChanges();
+                }
+            }
+            return devices;
+        }
+
+
+        public static Dictionary<string, List<LaneFlow>> CreateData(IServiceProvider serviceProvider, List<FlowDevice> devices, List<DataCreateMode> modes, List<DateTime> startTimes, List<DateTime> endTimes, bool initDatabase = false)
         {
             if (initDatabase)
             {
                 ResetDatabase(serviceProvider);
             }
             Dictionary<string, List<LaneFlow>> datas = new Dictionary<string, List<LaneFlow>>();
-            foreach (TrafficDevice device in devices)
+            foreach (FlowDevice device in devices)
             {
-                foreach (var relation in device.Device_Channels)
+                foreach (var relation in device.FlowDevice_FlowChannels)
                 {
-                    foreach (TrafficLane lane in relation.Channel.Lanes)
+                    foreach (Lane lane in relation.Channel.Lanes)
                     {
                         datas.Add(lane.DataId, new List<LaneFlow>());
                     }
@@ -50,11 +163,11 @@ namespace IntegrationTest
                 FlowBranchBlock branch = new FlowBranchBlock(serviceProvider);
                 branch.Open(devices, minTime, maxTime);
                 Random random = new Random();
-                foreach (TrafficDevice device in devices)
+                foreach (FlowDevice device in devices)
                 {
-                    foreach (var relation in device.Device_Channels)
+                    foreach (var relation in device.FlowDevice_FlowChannels)
                     {
-                        foreach (TrafficLane lane in relation.Channel.Lanes)
+                        foreach (Lane lane in relation.Channel.Lanes)
                         {
                             int value = 1;
                             for (int m = 0; m < 1440; ++m)
@@ -183,7 +296,7 @@ namespace IntegrationTest
             return datas;
         }
 
-        public static Dictionary<string, List<LaneFlow>> CreateData(IServiceProvider serviceProvider, List<TrafficDevice> devices, DataCreateMode mode, List<DateTime> dates, bool initDatabase = false)
+        public static Dictionary<string, List<LaneFlow>> CreateData(IServiceProvider serviceProvider, List<FlowDevice> devices, DataCreateMode mode, List<DateTime> dates, bool initDatabase = false)
         {
             List<DateTime> startTimes = new List<DateTime>();
             List<DateTime> endTimes = new List<DateTime>();
@@ -198,7 +311,7 @@ namespace IntegrationTest
             return CreateData(serviceProvider, devices, modes, startTimes, endTimes, initDatabase);
         }
 
-        public static Dictionary<string, List<LaneFlow>> CreateData(IServiceProvider serviceProvider, List<TrafficDevice> devices, DataCreateMode mode, DateTime startDate, DateTime endDate, bool initDatabase = false)
+        public static Dictionary<string, List<LaneFlow>> CreateData(IServiceProvider serviceProvider, List<FlowDevice> devices, DataCreateMode mode, DateTime startDate, DateTime endDate, bool initDatabase = false)
         {
             List<DateTime> startTimes = new List<DateTime>();
             List<DateTime> endTimes = new List<DateTime>();
@@ -213,7 +326,7 @@ namespace IntegrationTest
             return CreateData(serviceProvider, devices, modes, startTimes, endTimes, initDatabase);
         }
 
-        public static Dictionary<string, List<LaneFlow>> CreateData(IServiceProvider serviceProvider, List<TrafficDevice> devices, DataCreateMode mode, DateTime day, bool initDatabase = false)
+        public static Dictionary<string, List<LaneFlow>> CreateData(IServiceProvider serviceProvider, List<FlowDevice> devices, DataCreateMode mode, DateTime day, bool initDatabase = false)
         {
             List<DateTime> startTimes = new List<DateTime> { day };
             List<DateTime> endTimes = new List<DateTime> { day.AddDays(1) };
@@ -221,7 +334,7 @@ namespace IntegrationTest
             return CreateData(serviceProvider, devices, modes, startTimes, endTimes, initDatabase);
         }
 
-        public static void CreateData(IServiceProvider serviceProvider, List<TrafficDevice> devices, DateTime startDate,
+        public static void CreateData(IServiceProvider serviceProvider, List<FlowDevice> devices, DateTime startDate,
             int minutes)
         {
             using (FlowContext context =
@@ -237,11 +350,11 @@ namespace IntegrationTest
                 using (FlowContext context =
                     serviceProvider.CreateScope().ServiceProvider.GetRequiredService<FlowContext>())
                 {
-                    foreach (TrafficDevice device in devices)
+                    foreach (FlowDevice device in devices)
                     {
-                        foreach (var relation in device.Device_Channels)
+                        foreach (var relation in device.FlowDevice_FlowChannels)
                         {
-                            foreach (TrafficLane lane in relation.Channel.Lanes)
+                            foreach (Lane lane in relation.Channel.Lanes)
                             {
                         
                                 LaneFlow_One laneFlow = new LaneFlow_One

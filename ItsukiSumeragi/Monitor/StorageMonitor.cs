@@ -8,18 +8,18 @@ namespace ItsukiSumeragi.Monitor
     /// <summary>
     /// 数据定时触发入库
     /// </summary>
-    public class StorageMonitor<T> : IFixedJob where T:TrafficData
+    public class StorageMonitor<T,U> : IFixedJob where T:TrafficData where U:TrafficDevice
     {
         /// <summary>
         /// 数据块
         /// </summary>
-        private TrafficBranchBlock<T> _block;
+        private TrafficBranchBlock<T,U> _block;
 
         /// <summary>
         /// 设置数据块
         /// </summary>
         /// <param name="block"></param>
-        public void SetBranchBlock(TrafficBranchBlock<T> block)
+        public void SetBranchBlock(TrafficBranchBlock<T,U> block)
         {
             _block = block;
         }

@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using ItsukiSumeragi.Models;
 using Kakegurui.Core;
 using Microsoft.Extensions.DependencyInjection;
+using MomobamiKirari.Codes;
 using MomobamiKirari.Data;
 using MomobamiKirari.DataFlow;
 using MomobamiKirari.Models;
-using ItsukiSumeragi.Codes.Flow;
 
 namespace IntegrationTest
 {
@@ -15,7 +14,7 @@ namespace IntegrationTest
     /// </summary>
     public class VideoStructDbSimulator
     {
-        public static void CreateData(IServiceProvider serviceProvider, List<TrafficDevice> devices, DataCreateMode mode, DateTime startDate, DateTime endDate, bool initDatabase = false)
+        public static void CreateData(IServiceProvider serviceProvider, List<FlowDevice> devices, DataCreateMode mode, DateTime startDate, DateTime endDate, bool initDatabase = false)
         {
             if (initDatabase)
             {
@@ -38,11 +37,11 @@ namespace IntegrationTest
                 for (int i = 0; i < 1440; ++i)
                 {
                     DateTime startTime = startDate.AddMinutes(i);
-                    foreach (TrafficDevice device in devices)
+                    foreach (FlowDevice device in devices)
                     {
-                        foreach (var relation in device.Device_Channels)
+                        foreach (var relation in device.FlowDevice_FlowChannels)
                         {
-                            foreach (TrafficLane lane in relation.Channel.Lanes)
+                            foreach (Lane lane in relation.Channel.Lanes)
                             {
                                 VideoVehicle videoVehicle;
                                 VideoBike bike;

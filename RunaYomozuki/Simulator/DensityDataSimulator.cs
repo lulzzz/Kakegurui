@@ -1,6 +1,5 @@
 ﻿using System;
 using Kakegurui.WebExtensions;
-using MomobamiRirika.Adapter;
 
 namespace RunaYomozuki.Simulator
 {
@@ -9,6 +8,19 @@ namespace RunaYomozuki.Simulator
     /// </summary>
     public class DensityDataSimulator: TrafficDataSimulator
     {
+        internal class DensityAdapterData
+        {
+            public DensityData data { get; set; }
+            public string type { get; set; }
+        }
+
+        internal class DensityData
+        {
+            public string record_time { get; set; }
+            public int channel_id { get; set; }
+            public int region_id { get; set; }
+            public int count { get; set; }
+        }
         /// <summary>
         /// 随机值
         /// </summary>
